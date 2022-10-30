@@ -1,0 +1,146 @@
+\documentclass{beamer}					% Document class
+
+\mode<presentation>
+  {
+    \usetheme{default}                    % Set theme
+    \usecolortheme{default}               % Set colors
+    \usefonttheme{default}                % Set font theme
+    \setbeamertemplate{caption}[numbered] % Set caption to be numbered
+  }
+
+\usepackage{graphicx}  % For including figures
+\usepackage{booktabs}  % For table rules
+\usepackage{hyperref}  % For cross-referencing
+
+\title{Introduction}  % Presentation title
+\author{John Mensah}                              % Presentation author
+\institute{University of Nebraska-Lincoln}                  % Author affiliation
+\date{\today}                                    % Today's date
+
+% This creates a bibliography file with the same name as the main file.
+% Mostly, it allows us to have only one text file to lug around.
+
+
+
+\begin{document}
+
+% Title page
+% This page includes the information defined earlier including
+% title, author/s, affiliation/s and the date
+\begin{frame}
+\titlepage
+\end{frame}
+
+% Outline
+% This page includes the outline (Table of content) of the presentation.
+% All sections and subsections will appear in the outline by default.
+\begin{frame}{Outline}
+\tableofcontents
+\end{frame}
+
+% The following is the most frequently used slide types in beamer
+% The slide structure is as follows:
+  %
+%\begin{frame}{<slide-title>}
+%	<content>
+  %\end{frame}
+
+\section{Biography}
+
+\begin{frame}{A brief introduction of Myself}
+This is a bullet list of two points:
+  \begin{itemize}
+\item My name is John Mensah
+\item My birthday is on March 23rd
+\item I grew up in the Southern part of Ghana
+\item I am studying a Ph.D. in Biological Science (with minor in Statistics) with a focus on Ecology, Evolution and Behavior
+\item I hope to graduate in Spring 2025
+\end{itemize}
+\end{frame}
+
+\section{Photo of favorite Animal}
+\begin{frame}
+\frametitle{Photos of my favorite Animal - Leopard}
+\begin{center}
+\includegraphics[width=.25\textwidth]{Leopard2.png}
+\includegraphics[width=.25\textwidth]{Leopard1.png}
+
+\includegraphics[width=.55\textwidth]{leopard.png}
+\end{center}
+
+\end{frame}
+
+
+<<test-chunk, eval = T, echo = F, tidy = F, message=FALSE, warning=FALSE>>=
+library(knitr)
+library(tidyverse)
+Reproduction <- read.csv("Reproduction.csv")
+Rep.She <- Reproduction %>% filter(Site == "Sheep")
+@
+
+
+\section{Favorite plot}
+\begin{frame}{Favorite plot}
+<<figure1, eval = T, echo = F, fig.cap = "Change-point analysis of flowering pattern", fig.width = 6, fig.height = 4,message=FALSE, warning=FALSE>>=
+library(knitr)
+my_col <- "green"
+my_col1 <- "blue"
+my_col2 <- "red"
+my_col3 <- "purple"
+my_col4 <- "violet"
+my_col_alpha <- adjustcolor(my_col, alpha.f = 0.2)
+my_col_alpha1 <- adjustcolor(my_col1, alpha.f = 0.2)
+my_col_alpha2 <- adjustcolor(my_col2, alpha.f = 0.2)
+my_col_alpha3 <- adjustcolor(my_col3, alpha.f = 0.2)
+my_col_alpha4 <- adjustcolor(my_col4, alpha.f = 0.2)
+
+library(bcp)
+Rep.She[is.na(Rep.She)] <- 0
+x1 <- log(Rep.She$m.total + 1)
+x2 <- Rep.She$total.cv
+x3 <- Rep.She$total.acf
+yr <- 1986:2020
+
+x1.bcp <- bcp(x1)
+#########################
+x2.bcp <- bcp(x2)
+##########################
+x3.bcp <- bcp(x3)
+
+yr <- 1986:2020
+par(mar=c(2.2,2.2,.3,2.5)+0.1, mgp=c(1.1,0.2,0), tck=0.02, lwd=1, cex=1, cex.lab=0.8, cex.axis=0.8,  pch=16)
+
+plot(yr, x1.bcp$posterior.prob, type="n", axes=F, lwd=2, ylab="", xlab="")
+lines(yr, ((x1.bcp$posterior.prob))/2, lwd=5, col="grey70", lend=2,type="h")
+axis(4, at=c(0.0, 0.1, 0.2, 0.3, 0.4), las=2, cex.axis=0.8, hadj=1, mgp = c(0.5,1.2,0), labels = c(0.0, 0.2, 0.4, 0.6, 0.8))
+mtext("Probability", 4, line=1.2, adj=0.1)
+par(new=T)
+plot(yr, x1.bcp$data[,2], type="n", axes=F, lwd=1, ylab="", xlab="", ylim=c(-2,2))
+lines(yr, x1.bcp$data[,2], pch=21, type="o", bg="white", col="darkorange", cex=1.2, lwd=2)
+lines(yr, x1.bcp$posterior.mean[,1], pch=21, type="o", bg="white", col="cadetblue", cex=1.2, lwd=2)
+
+axis(1, at=c(1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020), cex.axis=0.8)
+axis(1, at=c(1986:2020), labels=F, tck=0.008)
+axis(2, at=c(0:17)/10, las=2, cex.axis=0.8)
+rect(c(2004,-1), -1e6, c(2014,0.05), 1e6, col=my_col_alpha3, border=NA)
+rect(c(2015,-1), -1e6, c(2020,0.05), 1e6, col=my_col_alpha4, border=NA)
+
+mtext("Year", 1, line=1.2)
+mtext("Mean Inflorescence", 2, line=1.3, adj=0.7)
+
+legend("top", c("log(mean inflor)", "Posterior Means", "Posterior Prob"), pt.lwd=2, col=c("darkorange","cadetblue", "grey70"), pch=c(21,21, 15), ncol=3, pt.cex =1.2, cex=0.85, bty="n")
+title(main = " ", adj = 0.2, line = -3)
+@
+  \end{frame}
+
+\section{Link to my CV}
+
+\begin{frame}
+A URL link to my CV: \url{https://github.com/JohnMensah50/JohnMensah50.github.io/blob/main/JohnMensah_CV.pdf}
+\end{frame}
+
+\end{document}
+
+
+
+

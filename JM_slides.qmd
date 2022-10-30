@@ -1,0 +1,94 @@
+---
+title: "Introduction"
+author: "John Mensah"
+institute: "University of Nebraska-Lincoln"
+date: "October 30th, 2022"
+format: revealjs
+editor: visual
+---
+
+## Outline
+
+-   Biography
+-   Photo of favorite animal
+-   Photo of favorite plot
+-   URL link to my CV
+
+## A brief introduction of Myself
+
+-   My name is John Mensah
+
+-   My birthday is on March 23rd
+
+-   I grew up in the Southern part of Ghana
+
+-   I am studying a Ph.D. in Biological Science (with minor in Statistics) with a focus on Ecology, Evolution and Behavior
+
+-   I hope to graduate in Spring 2025
+
+## Photos of my favorite animal - Leopard
+
+![](Leopard2.png){width="200"}
+
+![](leopard.png){width="200"}
+
+## My favorite plot
+
+```{r, eval = T, echo = F, fig.cap = "Change-point analysis of flowering pattern", fig.width = 6, fig.height = 4,message=FALSE, warning=FALSE}
+library(knitr)
+library(tidyverse)
+Reproduction <- read.csv("Reproduction.csv")
+Rep.She <- Reproduction %>% filter(Site == "Sheep")
+library(knitr)
+my_col <- "green"
+my_col1 <- "blue"
+my_col2 <- "red"
+my_col3 <- "purple"
+my_col4 <- "violet"
+my_col_alpha <- adjustcolor(my_col, alpha.f = 0.2)
+my_col_alpha1 <- adjustcolor(my_col1, alpha.f = 0.2)
+my_col_alpha2 <- adjustcolor(my_col2, alpha.f = 0.2)
+my_col_alpha3 <- adjustcolor(my_col3, alpha.f = 0.2)
+my_col_alpha4 <- adjustcolor(my_col4, alpha.f = 0.2)
+
+library(bcp)
+Rep.She[is.na(Rep.She)] <- 0
+x1 <- log(Rep.She$m.total + 1)
+x2 <- Rep.She$total.cv
+x3 <- Rep.She$total.acf
+yr <- 1986:2020
+
+x1.bcp <- bcp(x1)
+#########################
+x2.bcp <- bcp(x2)
+##########################
+x3.bcp <- bcp(x3)
+
+yr <- 1986:2020
+par(mar=c(2.2,2.2,.3,2.5)+0.1, mgp=c(1.1,0.2,0), tck=0.02, lwd=1, cex=1, cex.lab=0.8, cex.axis=0.8,  pch=16)
+
+plot(yr, x1.bcp$posterior.prob, type="n", axes=F, lwd=2, ylab="", xlab="")
+lines(yr, ((x1.bcp$posterior.prob))/2, lwd=5, col="grey70", lend=2,type="h")
+axis(4, at=c(0.0, 0.1, 0.2, 0.3, 0.4), las=2, cex.axis=0.8, hadj=1, mgp = c(0.5,1.2,0), labels = c(0.0, 0.2, 0.4, 0.6, 0.8))
+mtext("Probability", 4, line=1.2, adj=0.1)
+par(new=T)
+plot(yr, x1.bcp$data[,2], type="n", axes=F, lwd=1, ylab="", xlab="", ylim=c(-2,2))
+lines(yr, x1.bcp$data[,2], pch=21, type="o", bg="white", col="darkorange", cex=1.2, lwd=2)
+lines(yr, x1.bcp$posterior.mean[,1], pch=21, type="o", bg="white", col="cadetblue", cex=1.2, lwd=2)
+
+axis(1, at=c(1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020), cex.axis=0.8)
+axis(1, at=c(1986:2020), labels=F, tck=0.008)
+axis(2, at=c(0:17)/10, las=2, cex.axis=0.8)
+rect(c(2004,-1), -1e6, c(2014,0.05), 1e6, col=my_col_alpha3, border=NA)
+rect(c(2015,-1), -1e6, c(2020,0.05), 1e6, col=my_col_alpha4, border=NA)
+
+mtext("Year", 1, line=1.2)
+mtext("Mean Inflorescence", 2, line=1.3, adj=0.7)
+
+legend("top", c("log(mean inflor)", "Posterior Means", "Posterior Prob"), pt.lwd=2, col=c("darkorange","cadetblue", "grey70"), pch=c(21,21, 15), ncol=3, pt.cex =1.2, cex=0.85, bty="n")
+title(main = " ", adj = 0.2, line = -3)
+```
+
+## Link to my CV
+
+You can look at my CV on my github.io using this link: <https://github.com/JohnMensah50/JohnMensah50.github.io/blob/main/JohnMensah_CV.pdf>
