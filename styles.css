@@ -1,0 +1,4 @@
+/* css styles */
+.about-image {
+  object-position: center 20%;  // shifts crop upward, showing more forehead
+}

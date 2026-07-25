@@ -1,0 +1,477 @@
+---
+title: "Visualizing, Clustering, and Classifying High-Dimensional Data"
+description: "A teaching walkthrough of PCA, MDS, t-SNE, K-means, and multi-class logistic regression, from synthetic Gaussian mixtures to a real chemistry dataset"
+date: 2026-07-24
+categories: [Python, machine-learning, dimensionality-reduction]
+jupyter: python3
+---
+
+## Why this matters
+
+A huge amount of ecological and genomic data is *high-dimensional* — think gene expression across thousands of loci, or spectral bands across a drone image. Humans can only really "see" two or three dimensions at once, so before we can cluster samples, classify them, or even eyeball whether groups exist, we need tools that compress high-dimensional data down to something plottable without destroying the structure we care about.
+
+This post walks through that whole pipeline, step by step, the way I'd explain it to someone seeing these methods for the first time:
+
+1. **Visualization** — PCA, MDS, and t-SNE
+2. **Clustering** — K-means, and how to decide the number of clusters
+3. **A real-data example** — the classic wine chemistry dataset
+4. **Classification** — multi-class logistic regression with regularization and feature selection
+
+Every code block below is annotated with *what* it does and *why* it's written that way, not just *what it outputs*.
+
+## Setup
+
+```{python}
+#| eval: false
+import numpy as np
+import matplotlib.pyplot as plt
+```
+
+`numpy` handles the numerical arrays, `matplotlib` handles the plotting. The `%matplotlib inline` magic just tells Jupyter to display plots directly in the notebook rather than in a separate window — you can drop this line entirely if you're running as a plain `.py` script.
+
+## Part 1 — Building synthetic data we can trust
+
+Before touching real data, it helps to build a dataset where we **already know the right answer** — here, we'll simulate four groups of points (a "Gaussian mixture") with known means and known covariance structure. That way, when PCA or t-SNE shows us "four clusters," we can check that against ground truth rather than taking it on faith.
+
+```{python}
+#| eval: false
+from scipy.stats import ortho_group  # Used for random rotation of covariance matrix
+```
+
+`ortho_group` generates random *orthogonal* rotation matrices — matrices that rotate space without stretching it. We'll use this later to give one of our four groups a covariance matrix that's tilted at a random angle, rather than lined up neatly with the axes. This mimics what real data looks like: clusters are rarely perfectly aligned with your measured variables.
+
+```{python}
+#| eval: false
+# Samples a Gaussian mixture with provided means and covariances. Optionally returns ground truth labels
+def sample_gmm(n, mu, cov, return_labels=True):
+    data = np.vstack([np.random.multivariate_normal(mu[i], cov[i], size=n//mu.shape[0]) for i in range(mu.shape[0])])
+    labels = np.hstack([i*np.ones(n//mu.shape[0]) for i in range(mu.shape[0])])
+    perm = np.random.permutation(data.shape[0])
+    if return_labels:
+        return data[perm], labels[perm]
+    return data[perm]
+```
+
+Breaking this down line by line:
+
+- `np.random.multivariate_normal(mu[i], cov[i], size=...)` draws random points from a multivariate normal (Gaussian) distribution centered at `mu[i]` with spread/shape given by `cov[i]`. This is the multi-dimensional version of drawing from a bell curve.
+- The list comprehension does this once **per group** (`for i in range(mu.shape[0])`), and `np.vstack` stacks all groups' points into one big array.
+- `labels` just records which group each point came from — `i` repeated `n // mu.shape[0]` times per group.
+- `np.random.permutation(...)` shuffles the row order. This matters because if the data comes in sorted by group, some algorithms (or careless plotting) could accidentally "cheat" by using row order as information. Shuffling removes that risk.
+- The function returns either `(data, labels)` or just `data`, depending on whether you want ground truth for validation, or want to pretend you don't know it (as you would with real data).
+
+### Defining four groups with different shapes
+
+```{python}
+#| eval: false
+d = 100
+mu = np.zeros((4,d))
+mu[0,1:]=1
+mu[1,1:40]=1
+mu[1,40:]=0.5
+mu[2,1:]=-1
+mu[3,1:95]=-1
+mu[3,96]=2
+```
+
+We're working in `d = 100` dimensions — think of this as 100 measured variables (e.g., 100 gene expression levels). `mu` is a 4×100 array: one row per group, giving that group's center point in 100-dimensional space. Each group gets a different pattern of values across those 100 dimensions, so the four "clusters" sit in genuinely different regions of the space — not just different in one variable.
+
+```{python}
+#| eval: false
+np.random.seed(350)
+cov=np.zeros((4,d,d))
+cov[0] = 0.05*np.eye(d)
+rot = ortho_group.rvs(d)
+mat = np.eye(d)
+mat[0,0] = 3.0
+mat[1,1] = 1.0
+cov[1] = np.dot(rot, np.dot(mat,rot.T))
+cov[2] = 0.5*np.eye(d)
+cov[3] = 0.02*np.eye(d)
+```
+
+`np.random.seed(350)` fixes the random number generator so this is **reproducible** — anyone running this code gets the exact same "random" data. Always seed your random processes in teaching material or anything you want to debug later.
+
+- Groups 0 and 3 get **small, isotropic** (equal-in-all-directions) covariance — `np.eye(d)` is the identity matrix, so multiplying by a small number (`0.05`, `0.02`) makes tight, round, ball-shaped clusters.
+- Group 2 gets a medium isotropic covariance (`0.5`) — bigger, but still round.
+- Group 1 is the interesting one: `mat` stretches variance along two directions (3x along one axis, unchanged along another), and then `rot` (our random orthogonal rotation from earlier) tilts that stretched shape at a random angle in 100-dimensional space. The result is a cigar-shaped, tilted cluster — much more like what messy real data looks like.
+
+```{python}
+#| eval: false
+X,y = sample_gmm(1200,mu,cov)
+```
+
+Now we actually draw 1,200 points total (300 per group) using the function we wrote earlier. `X` is our data matrix (1200 rows × 100 columns), `y` holds the ground-truth group label for each row.
+
+## Part 2 — Why you can't just "look" at high-dimensional data
+
+```{python}
+#| eval: false
+plt.scatter(X[:,0],X[:,1])
+plt.title("Scatter plot of 1st and 2nd dimensions",size=18)
+plt.xlabel("x1",size=14)
+plt.ylabel("x2",size=14)
+plt.axis("equal")
+plt.show()
+```
+
+This plots only the **first two of our 100 dimensions**. It looks like a formless blob — which makes sense, because most of the separation between our four groups is happening across dimensions we're not looking at. This is the core problem: **raw data plots of just 2 of many dimensions are almost always misleading**, especially when clusters are separated along dimensions you didn't happen to pick.
+
+```{python}
+#| eval: false
+# Ground truth
+plt.scatter(X[:,0],X[:,1],c=y)
+```
+
+Coloring points by their true group (`c=y`) confirms it — even knowing the right answer, dimensions 1 and 2 alone don't visually separate the groups. We need a method that looks at *all* the dimensions and finds the best possible 2D summary.
+
+## Part 3 — PCA (Principal Component Analysis)
+
+```{python}
+#| eval: false
+from sklearn.decomposition import PCA
+
+pca = PCA()  # Initialize with n_components parameter to only find the top eigenvectors
+z = pca.fit_transform(X)
+```
+
+PCA finds new axes — **principal components** — that are linear combinations of your original 100 variables, ordered so that the first axis captures the most variance (spread) in the data, the second captures the most *remaining* variance, and so on. `fit_transform` both learns these axes from `X` and immediately projects the data onto them, giving us `z`, a new 1200×100 array where the first couple of columns usually contain most of the interesting structure.
+
+```{python}
+#| eval: false
+plt.scatter(z[:,0],z[:,1],c=y)
+plt.title("Scatter plot of 1st and 2nd PCs",size=18)
+plt.xlabel("PC 1",size=14)
+plt.ylabel("PC 2",size=14)
+plt.axis("equal")
+plt.show()
+```
+
+Now, plotting the first two **principal components** (instead of the first two raw variables) reveals the structure clearly: two larger, well-separated clusters and one smaller one. PCA preserves *global* distance relationships — clusters that are far apart in the plot really are far apart in the original 100-dimensional space, which is a useful guarantee that not every visualization method gives you (more on that with t-SNE below).
+
+### How many components should you keep?
+
+This matters a lot in practice — keeping too few components loses real structure; keeping too many keeps noise. The notebook shows three common approaches:
+
+**1. Scree / elbow plot** — plot variance explained by each component, and look for where the curve "bends" and flattens out:
+
+```{python}
+#| eval: false
+plt.plot(np.arange(1,101),pca.explained_variance_ratio_[0:100])
+plt.title("% Explained variance by component",size=18)
+plt.xlabel("Component #",size=14)
+plt.ylabel("% Variance Explained",size=14)
+plt.show()
+```
+
+`pca.explained_variance_ratio_` is an array where each entry tells you what fraction of the total variance that component accounts for. The first component usually dominates; after that, look for the "elbow" where additional components stop adding much.
+
+**2. Cumulative variance threshold** — decide "I want to retain 85% of the total variance" and find how many components that takes:
+
+```{python}
+#| eval: false
+plt.plot(np.arange(0,100),np.cumsum(pca.explained_variance_ratio_))
+plt.title("Cumulative Variance Explained",size=18)
+plt.xlabel("Number of Components",size=14)
+plt.ylabel("% Variance Explained",size=14)
+plt.show()
+
+np.where(np.cumsum(pca.explained_variance_ratio_) >= .85)[0][0]
+```
+
+`np.cumsum` runs a running total across the array — so entry `k` tells you "variance explained by the first `k+1` components combined." `np.where(... >= .85)[0][0]` finds the *index* of the first component where that running total crosses 85%.
+
+**3. Cross-validation** — hold out some data, refit PCA on the rest with varying numbers of components, and see how well each choice reconstructs the held-out data. This is more rigorous but computationally heavier — worth doing when component count materially affects a downstream model.
+
+## Part 4 — MDS (Multidimensional Scaling)
+
+```{python}
+#| eval: false
+from sklearn.manifold import MDS
+
+mds = MDS(n_components=2,verbose=1,eps=1e-5)
+mds.fit(X)
+plt.scatter(mds.embedding_[:,0],mds.embedding_[:,1],c=y)
+plt.title("MDS Plot",size=18)
+plt.axis("equal")
+plt.show()
+```
+
+MDS takes a different approach than PCA: instead of finding variance-maximizing axes, it directly tries to arrange points in 2D so that the *pairwise distances* between them match the pairwise distances in the original 100-dimensional space as closely as possible. `n_components=2` sets the target dimensionality; `eps` controls the convergence tolerance for the optimization.
+
+One important gotcha flagged in the original notebook: **scikit-learn's MDS uses a "stress" objective, which makes it a genuinely nonlinear method — it is not mathematically equivalent to PCA**, even though "classical" MDS (as implemented in R) actually is equivalent to PCA. If you're moving between R and Python, don't assume `MDS()` in both languages gives you the same thing.
+
+```{python}
+#| eval: false
+means = np.array([np.mean(X[np.where(y == i)],axis=0) for i in range(4)])
+mds_means = MDS(2,verbose=1,eps=1e-8,n_init=10)
+mds_means.fit(means)
+plt.scatter(mds_means.embedding_[:,0],mds_means.embedding_[:,1],c=[0,1,2,3],s=200)
+```
+
+Here we compute just the four group **centroids** (the mean point of each group) and run MDS on those four points alone. This is a nice trick for de-cluttering a plot when you care about how groups relate to each other, not about individual-point spread.
+
+## Part 5 — t-SNE
+
+```{python}
+#| eval: false
+from sklearn.manifold import TSNE
+
+tsne = TSNE(n_components=2,verbose=1,perplexity=40)
+z_tsne = tsne.fit_transform(X)
+plt.scatter(z_tsne[:,0],z_tsne[:,1],c=y)
+plt.title("TSNE, perplexity 40",size=18)
+plt.axis("equal")
+plt.show()
+```
+
+t-SNE is a nonlinear method that's particularly good at revealing tight, well-separated clusters — but there's a critical caveat worth internalizing: **distances between clusters in a t-SNE plot don't mean anything.** t-SNE optimizes to preserve *local* neighborhood structure (which points are near which), not global distances. Two clusters that appear close together in a t-SNE plot could be near or far apart in the real data — you can't tell from the plot alone.
+
+`perplexity` is t-SNE's main tuning parameter — loosely, it controls how many neighbors each point "pays attention to" when the algorithm decides what counts as a local neighborhood. The notebook compares perplexity 40 vs. perplexity 5 on the same data:
+
+```{python}
+#| eval: false
+tsne = TSNE(n_components=2,verbose=1,perplexity=5)
+z_tsne = tsne.fit_transform(X)
+plt.scatter(z_tsne[:,0],z_tsne[:,1],c=y)
+plt.title("TSNE, perplexity 5",size=18)
+plt.axis("equal")
+plt.show()
+```
+
+Lower perplexity focuses on very local structure and can fragment a single true cluster into several visual pieces; higher perplexity smooths things out but can blur genuinely separate small clusters together. There's no universally "correct" value — try a few and sanity-check against what you know about the data.
+
+Interestingly, for this dataset, t-SNE on the **raw** 100-dimensional data doesn't do especially well — but running t-SNE on the **first 10 PCA components** instead sharpens things considerably:
+
+```{python}
+#| eval: false
+tsne = TSNE(n_components=2,verbose=1,perplexity=40)
+z_tsne = tsne.fit_transform(z[:,0:10])
+plt.scatter(z_tsne[:,0],z_tsne[:,1],c=y)
+plt.title("TSNE on first 10 PCs, perplexity 40",size=18)
+plt.axis("equal")
+plt.show()
+```
+
+This is a common and genuinely useful pattern: **use PCA first to strip out noise dimensions, then run t-SNE on the reduced representation.** PCA acts as a cheap denoising step before the more expensive, more locally-sensitive t-SNE.
+
+### When t-SNE beats PCA outright
+
+The notebook builds a second synthetic dataset with **25** separate clusters instead of 4:
+
+```{python}
+#| eval: false
+mu2 = np.zeros((25,100))
+for i in range(25):
+    mu2[i,i] = 1
+cov2 = [0.02*np.eye(100) for _ in range(25)]
+X2,y2 = sample_gmm(1000,mu2,cov2)
+```
+
+Each of the 25 groups is centered along a different one of the first 25 dimensions, all with small, tight covariance. When you run PCA on this, no clear cluster structure shows up in the top two components — because no single pair of components captures more than a sliver of the 25-dimensional group separation. But t-SNE, because it's explicitly optimizing for local neighborhood preservation rather than variance capture, cleanly separates all 25 groups in 2D. **The lesson: PCA is great for data whose important structure is genuinely low-rank/linear; t-SNE is better suited for data with many small, tightly-packed, non-linearly-arranged clusters.** Neither method is universally "better" — it depends on the shape of your data.
+
+## Part 6 — K-means clustering
+
+```{python}
+#| eval: false
+from sklearn.cluster import KMeans
+
+kmeans = KMeans(n_clusters=4,n_init=10)
+y_pred = kmeans.fit_predict(z)
+plt.scatter(z[:,0],z[:,1],c=y_pred)
+```
+
+K-means partitions data into `k` clusters by iteratively assigning each point to its nearest cluster center, then recomputing centers as the mean of their assigned points, until convergence. Because K-means can get stuck in a poor local solution depending on where it starts, `n_init` reruns the whole algorithm that many times from different random starting points and keeps the best result. The notebook explicitly compares `n_init=10` vs. `n_init=100` — more restarts costs more compute but gives a more reliable final answer, especially on trickier data.
+
+### How many clusters? Two diagnostics
+
+**Elbow plot (within-cluster sum of squares, called "inertia" in scikit-learn):**
+
+```{python}
+#| eval: false
+all_kmeans = [KMeans(n_clusters=i+1,n_init=100) for i in range(8)]
+for i in range(8):
+    all_kmeans[i].fit(X)
+
+inertias = [all_kmeans[i].inertia_ for i in range(8)]
+plt.plot(np.arange(1,9),inertias)
+plt.title("KMeans Sum of Squares Criterion",size=18)
+plt.xlabel("# Clusters",size=14)
+plt.ylabel("Within-Cluster Sum of Squares",size=14)
+plt.show()
+```
+
+This fits K-means separately for `k = 1` through `8`, and plots how much within-cluster variance ("inertia") remains at each `k`. Inertia always decreases as you add more clusters (more clusters means points are always at least as close to *some* center), so you're not looking for a minimum — you're looking for the point where adding another cluster stops giving you a meaningful improvement (the "elbow").
+
+**Silhouette score:**
+
+```{python}
+#| eval: false
+from sklearn.metrics import silhouette_score
+
+avg_silhouette_scores = [silhouette_score(X,all_kmeans[i].labels_) for i in range(1,8)]
+plt.plot(np.arange(2,9),avg_silhouette_scores)
+plt.title("Average Silhouette Scores",size=18)
+plt.xlabel("# Clusters",size=14)
+plt.ylabel("Average Silhouette Score",size=14)
+plt.show()
+```
+
+The silhouette score measures, for each point, how much closer it is to its own cluster than to the next-nearest cluster, averaged across all points — it ranges from -1 (badly clustered) to 1 (perfectly clustered), and is undefined for a single cluster (hence starting the loop at `range(1,8)` but only having valid scores from 2 clusters up). One caution worth remembering from the notebook: silhouette scores can look **surprisingly bad (even negative) on high-dimensional data even when clusters look visually clean** in a PCA or t-SNE plot — high dimensionality does strange things to distance-based metrics, so don't treat a low silhouette score as an automatic red flag without also checking a visualization.
+
+## Part 7 — Real data: the wine dataset
+
+Time to leave synthetic data behind and apply everything to a real, classic dataset — chemical measurements of wines grown from three different cultivars.
+
+```{python}
+#| eval: false
+from sklearn.datasets import load_wine
+features, target = load_wine(return_X_y=True)
+features.shape
+```
+
+`load_wine` ships built into scikit-learn — `features` is the measurement matrix (samples × chemical properties like alcohol content, flavonoids, color intensity), `target` is the true cultivar label for each wine sample.
+
+```{python}
+#| eval: false
+wine_std = (features - np.mean(features,0))/np.std(features,0)
+```
+
+**Standardization is essential here** and worth understanding *why*: the raw features are on wildly different scales (e.g., "proline" concentration might range in the hundreds, while "hue" is a small decimal). Without standardizing, PCA and K-means — both of which are fundamentally distance-based — would be dominated entirely by whichever variable happens to have the largest raw numeric scale, regardless of whether that variable is actually the most informative. Subtracting the mean and dividing by the standard deviation puts every variable on a comparable footing (mean 0, standard deviation 1).
+
+From here, the same PCA / MDS / t-SNE / K-means toolkit from before applies directly:
+
+```{python}
+#| eval: false
+pca_wine = PCA(5).fit(wine_std)
+pcs = pca_wine.transform(wine_std)
+plt.scatter(pcs[:,0],pcs[:,1])
+plt.title("Wine Data PCs",size=18)
+plt.show()
+```
+
+```{python}
+#| eval: false
+plt.plot(np.arange(1,6),[KMeans(i,n_init=50).fit(wine_std).inertia_ for i in range(1,6)])
+plt.title("KMeans Sum of Squares Criterion",size=18)
+plt.show()
+
+plt.plot(np.arange(2,6),[silhouette_score(wine_std,KMeans(i,n_init=50).fit(wine_std).labels_) for i in range(2,6)])
+plt.title("Average Silhouette Scores",size=18)
+plt.show()
+```
+
+Both the elbow plot and the silhouette score converge on **3 clusters** for the wine data — which makes sense, since we know (from `target`) that these wines really do come from 3 distinct cultivars. This is a satisfying case where unsupervised clustering, run completely blind to the true labels, rediscovers the real grouping.
+
+```{python}
+#| eval: false
+clustering = KMeans(3,n_init=50)
+clustering.fit(wine_std)
+```
+
+One subtlety worth flagging for anyone comparing K-means clusters against known ground truth: **K-means cluster labels (0, 1, 2, ...) are arbitrary — they don't necessarily line up with your true class labels in the same order.** So when you color a plot by K-means output next to a plot colored by true `target`, the colors may look "swapped" even when the actual groupings agree perfectly. Always check *which points* are grouped together, not just whether the color numbers match.
+
+## Part 8 — Classification with multi-class logistic regression
+
+Clustering is unsupervised — we never tell it the right answer. Classification is the supervised counterpart: we have labels, and we want a model that predicts them for new, unseen data.
+
+```{python}
+#| eval: false
+from sklearn.linear_model import LogisticRegression, LogisticRegressionCV
+
+np.random.seed(317)
+perm = np.random.permutation(wine_std.shape[0])
+n_train = int(4/5*wine_std.shape[0])
+X_train = wine_std[perm[:n_train]]
+y_train = target[perm[:n_train]]
+X_test = wine_std[perm[n_train:]]
+y_test = target[perm[n_train:]]
+```
+
+Standard train/test split: shuffle the row order, then take the first 80% as training data and the remaining 20% as a held-out test set. **This step matters more than it looks** — if you skip the shuffle and your original data happens to be sorted by class (common with real-world datasets), you could end up training on mostly one class and testing on another entirely, which would make your model look far worse (or, more dangerously, far better) than it really is.
+
+### One-vs-rest vs. multinomial
+
+With more than two classes, logistic regression has to decide how to generalize. Two common strategies:
+
+- **One-vs-rest (OVR)**: train one binary classifier per class ("is this class 0 or not?"), and at prediction time pick whichever classifier is most confident.
+- **Multinomial**: fit a single model with a softmax output — the natural multi-class generalization of the logistic sigmoid.
+
+```{python}
+#| eval: false
+log_reg = LogisticRegression(penalty="none",multi_class="ovr").fit(X_train,y_train)
+log_reg.score(X_train,y_train)
+log_reg.score(X_test,y_test)
+```
+
+`.score()` here returns classification accuracy (fraction of correct predictions) on whichever set you pass it. With no regularization (`penalty="none"`), watch for a common warning sign: high training accuracy paired with meaningfully lower test accuracy is a classic **overfitting** signature — the model has memorized quirks of the training data rather than learning generalizable patterns.
+
+### Regularization
+
+```{python}
+#| eval: false
+log_reg = LogisticRegression(penalty="l1",C=0.1,solver="liblinear",max_iter=5000,multi_class="ovr").fit(X_train,y_train)
+```
+
+Regularization penalizes large coefficients, which discourages the model from relying too heavily on any single feature and helps combat overfitting. `C` is scikit-learn's inverse regularization strength — **counterintuitively, a *smaller* `C` means *more* regularization**, not less. `penalty="l1"` specifically encourages many coefficients to shrink all the way to exactly zero, which has a nice side effect we'll use below: it does automatic feature selection. Note also that not every solver supports every penalty type — `liblinear` is used here specifically because it supports L1 regularization, unlike some of scikit-learn's other solvers.
+
+### Cross-validation to pick regularization strength
+
+Rather than guessing a single value of `C`, we can let cross-validation choose it for us:
+
+```{python}
+#| eval: false
+log_reg = LogisticRegressionCV(cv=5,Cs=[0.01,0.1,1,10],max_iter=5000,penalty="l1",solver="liblinear",multi_class="ovr")
+log_reg.fit(X_train,y_train)
+log_reg.score(X_train,y_train)
+```
+
+`cv=5` means 5-fold cross-validation: the training data is split into 5 chunks, the model is trained on 4 chunks and validated on the 5th, and this rotates through all 5 combinations. `Cs=[...]` gives the candidate regularization strengths to try; `LogisticRegressionCV` automatically picks whichever performed best across the folds and refits on the full training set using that value. You can inspect what was chosen:
+
+```{python}
+#| eval: false
+log_reg.C_        # the selected regularization strength(s)
+log_reg.scores_   # the full grid of cross-validation scores
+log_reg.score(X_test,y_test)   # final, honest performance estimate
+```
+
+The test-set score here is the number that actually matters for judging real-world performance — the cross-validation scores were used only to *choose* the hyperparameter, not to report final accuracy.
+
+### Using L1 regularization for feature selection
+
+```{python}
+#| eval: false
+log_reg.coef_
+np.sum(np.abs(log_reg.coef_),axis=0)
+```
+
+`log_reg.coef_` gives one row of coefficients per class (since this is one-vs-rest, one binary model per class), one column per feature. Summing the absolute value of coefficients down each column gives a rough "how much does this feature matter overall, across all classes" score — features whose coefficients got shrunk to (near) zero by the L1 penalty are contributing little to the model, while features with large summed coefficients are doing the heavy lifting.
+
+```{python}
+#| eval: false
+log_reg = LogisticRegressionCV(cv=5,Cs=[0.001,0.01,0.1,1,10],max_iter=5000,penalty="l1",solver="liblinear",multi_class="ovr")
+log_reg.fit(X_train[:,np.array([0,12])],y_train)
+log_reg.score(X_train[:,np.array([0,12])],y_train)
+log_reg.score(X_test[:,np.array([0,12])],y_test)
+```
+
+Here we take the lesson from the coefficient inspection and refit the model using **only 2 of the original 13 features** (columns 0 and 12 — the ones the L1 penalty flagged as most important). The result: roughly 80% training accuracy and 75% test accuracy using just 2 out of 13 measurements. Compare that against a different, less-informative pair of features (columns 4 and 5):
+
+```{python}
+#| eval: false
+log_reg = LogisticRegressionCV(cv=5,Cs=[0.001,0.01,0.1,1,10],max_iter=5000,penalty="l1",solver="liblinear",multi_class="ovr")
+log_reg.fit(X_train[:,np.array([4,5])],y_train)
+log_reg.score(X_train[:,np.array([4,5])],y_train)
+log_reg.score(X_test[:,np.array([4,5])],y_test)
+```
+
+This pair does noticeably worse (roughly 74% train / 64% test) — a direct, concrete demonstration that **feature selection genuinely changes model quality**, and that L1-based coefficient inspection is a legitimate, simple way to find out which measurements are actually carrying the signal, rather than including every variable by default.
+
+## Takeaways
+
+- Never trust a 2D scatter of just two raw variables from a high-dimensional dataset — use PCA, MDS, or t-SNE to actually see the structure.
+- PCA preserves global distance and variance; t-SNE preserves local neighborhoods but distorts global distance — pick based on what your data looks like and what question you're asking.
+- K-means needs you to choose the number of clusters; the elbow method and silhouette score are two complementary diagnostics, and they don't always agree — sanity-check against a visualization too.
+- Standardize features before any distance-based method (PCA, K-means, MDS) when your variables are on different scales.
+- Always evaluate a classifier on a held-out test set, and use cross-validation only to choose hyperparameters — not to report final performance.
+- L1-regularized logistic regression coefficients are a simple, effective way to find out which of your measured variables actually matter.

@@ -1,0 +1,70 @@
+---
+title: "John N. Mensah"
+image: profile.jpg
+about:
+  template: trestles
+  image-shape: round
+  links:
+    - text: "{{< ai orcid >}}"
+      href: https://orcid.org/0000-0002-6668-093X
+      aria-label: ORCID
+    - text: "{{< ai google-scholar >}}"
+      href: https://scholar.google.com/citations?user=YOUR_ID
+      aria-label: Google Scholar
+    - text: "{{< ai researchgate >}}"
+      href: https://www.researchgate.net/profile/John-Mensah-16
+      aria-label: ResearchGate
+    - icon: github
+      text: GitHub
+      href: https://github.com/yourusername
+    - icon: linkedin
+      text: LinkedIn
+      href: https://linkedin.com/in/yourprofile
+    - icon: envelope
+      text: Email
+      href: mailto:you@example.com
+---
+
+## About
+
+I'm a Ph.D. candidate in Biological Sciences (minor: Statistics) at the
+University of Nebraska–Lincoln, defending in August 2026. My work sits at
+the intersection of plant demography, remote sensing, and global change
+biology — I ask how long-term environmental stress and disturbance shape
+plant population dynamics, and how modern spatial data can scale that
+understanding beyond the plot level.
+
+My dissertation examines lagged water-stress effects and insect herbivory
+on native perennial thistles (*Cirsium undulatum*) using more than 20 years
+of field data. I'm currently expanding into UAV-based multispectral remote
+sensing, building an R pipeline to link vegetation indices and spectral
+texture to grassland community resilience.
+
+I'm on the job market for postdoctoral and research positions in
+quantitative ecology, spatial ecology, and data science.
+
+## Research interests
+
+- Long-term plant population and community demography
+- Global change effects on grassland resilience
+- Multispectral / UAV remote sensing for ecological monitoring
+- Statistical and machine learning methods for ecological inference
+  (GLMMs, GAMs, IPMs, Random Forest, XGBoost)
+
+## Education
+
+**Ph.D. in Biological Sciences**\
+Minor: Statistics\
+Specialization: Ecology, Evolution and Behaviour\
+University of Nebraska–Lincoln
+
+**B.Sc. Forest Resources Technology**\
+Specialization: Ecotourism and Forest Recreation\
+Kwame Nkrumah University of Science and Technology
+
+## Currently
+
+Working on the **DRAGNet grassland resilience project**, combining UAV
+multispectral imagery with field vegetation data across five experimental
+treatments (2024–2025) to quantify community-level resilience to disturbance.
+

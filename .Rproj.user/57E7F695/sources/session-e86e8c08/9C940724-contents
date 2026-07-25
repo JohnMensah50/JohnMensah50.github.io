@@ -1,0 +1,47 @@
+project:
+  type: website
+
+website:
+  title: "John N. Mensah"
+  description: "Quantitative ecologist — plant demography, remote sensing, global change"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: research.qmd
+        text: Research
+      - href: cv.qmd
+        text: CV
+      - href: publications.qmd
+        text: Publications
+      - href: blog/index.qmd
+        text: Blog
+      - href: gallery.qmd
+        text: Gallery
+    right:
+      - text: "{{< ai orcid >}}"
+        href: https://orcid.org/0000-0002-6668-093X
+        aria-label: ORCID
+      - text: "{{< ai researchgate >}}"
+        href: https://www.researchgate.net/profile/John-Mensah-16
+        aria-label: ResearchGate
+      - icon: mortarboard-fill
+        href: https://scholar.google.com/citations?user=NT9u2JEAAAAJ&hl=en
+        text: Google Scholar
+      - icon: github
+        href: https://github.com/JohnMensah50
+      - icon: linkedin
+        href: https://www.linkedin.com/in/john-mensah-b46684129/
+      - icon: envelope
+        href: mailto:nj.mensah50@gmail.com
+
+format:
+  html:
+    theme:
+      - cosmo          # or any bootswatch theme, or your own scss
+      - styles.scss
+    css: styles.css
+    toc: true
+
+
+

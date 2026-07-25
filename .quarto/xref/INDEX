@@ -1,0 +1,18 @@
+{
+  "index.qmd": {
+    "index.html": "224ff77f"
+  },
+  "about.qmd": {
+    "about.html": "c481e4c8"
+  },
+  "cv.qmd": {
+    "cv.tex": "53c883e1",
+    "cv.html": "b639ff29"
+  },
+  "blog/index.qmd": {
+    "index.html": "f1bcb73a"
+  },
+  "blog/posts/high-dim-viz-clustering-python/index.qmd": {
+    "index.html": "16e948d1"
+  }
+}
