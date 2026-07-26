@@ -77,64 +77,22 @@
     "text": "References\nAvailable upon request."
   },
   {
-    "objectID": "blog/index.html",
-    "href": "blog/index.html",
-    "title": "Blog",
-    "section": "",
-    "text": "Seeing the Unseeable: Visualizing, Clustering, and Classifying High-Dimensional Data\n\n\n\nPython\n\nmachine-learning\n\ndimensionality-reduction\n\n\n\nA beginner-friendly walkthrough of PCA, MDS, t-SNE, K-means, and logistic regression — from simulated data to a real chemistry dataset\n\n\n\n\n\nJul 24, 2026\n\n\n\n\n\nNo matching items"
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "John N. Mensah (Ph.D.)",
-    "section": "",
-    "text": "I’m John Nkrumah Mensah, and I’m so glad you’re here!\nI am interested in turning messy, real-world biological and environmental data into models that make predictions people can act on. My work sits at the intersection of data science, biology, and climate science, where I use quantitative tools to understand complex ecological and environmental problems. Over the past years, my research has centered on using and developing spatio-temporal, quantitative, and mechanistic modeling approaches to evaluate the impacts of biotic and abiotic conditions on species populations and distribution.\nWhat excites me most is turning complex data into insights that help us better understand the world around us. My research has taken me from long-term field studies and experiments to statistical modeling, machine learning, and spatial and temporal analysis. Along the way, I’ve built a broad toolkit spanning classical statistics (Bayesian methods, generalized additive models, mixed-effects models), functional data analysis, mathematical modeling, and machine learning.\nThis website is a window into my journey as a scientist, data analyst, and lifelong learner. Here, you’ll find examples of my research, publications, projects, data science work, and the tools and ideas that continue to shape my thinking.\nWhether you’re an employer looking for a quantitative scientist or data scientist, a researcher interested in collaboration, or simply someone curious about my work, I invite you to explore. I hope you’ll find something that sparks your interest – and perhaps an opportunity for us to work together, exchange ideas, or build something meaningful."
-  },
-  {
-    "objectID": "index.html#hello-and-welcome",
-    "href": "index.html#hello-and-welcome",
-    "title": "John N. Mensah (Ph.D.)",
-    "section": "",
-    "text": "I’m John Nkrumah Mensah, and I’m so glad you’re here!\nI am interested in turning messy, real-world biological and environmental data into models that make predictions people can act on. My work sits at the intersection of data science, biology, and climate science, where I use quantitative tools to understand complex ecological and environmental problems. Over the past years, my research has centered on using and developing spatio-temporal, quantitative, and mechanistic modeling approaches to evaluate the impacts of biotic and abiotic conditions on species populations and distribution.\nWhat excites me most is turning complex data into insights that help us better understand the world around us. My research has taken me from long-term field studies and experiments to statistical modeling, machine learning, and spatial and temporal analysis. Along the way, I’ve built a broad toolkit spanning classical statistics (Bayesian methods, generalized additive models, mixed-effects models), functional data analysis, mathematical modeling, and machine learning.\nThis website is a window into my journey as a scientist, data analyst, and lifelong learner. Here, you’ll find examples of my research, publications, projects, data science work, and the tools and ideas that continue to shape my thinking.\nWhether you’re an employer looking for a quantitative scientist or data scientist, a researcher interested in collaboration, or simply someone curious about my work, I invite you to explore. I hope you’ll find something that sparks your interest – and perhaps an opportunity for us to work together, exchange ideas, or build something meaningful."
-  },
-  {
-    "objectID": "index.html#education",
-    "href": "index.html#education",
-    "title": "John N. Mensah (Ph.D.)",
-    "section": "Education",
-    "text": "Education\nPh.D. in Biological Sciences\nMinor: Statistics\nSpecialization: Ecology, Evolution and Behaviour\nUniversity of Nebraska–Lincoln\nB.Sc. Forest Resources Technology\nSpecialization: Ecotourism and Forest Recreation\nKwame Nkrumah University of Science and Technology"
-  },
-  {
-    "objectID": "index.html#currently",
-    "href": "index.html#currently",
-    "title": "John N. Mensah (Ph.D.)",
-    "section": "Currently",
-    "text": "Currently\nI’m on the job market for postdoctoral and research positions in quantitative ecology and data science."
-  },
-  {
-    "objectID": "Research.html",
-    "href": "Research.html",
-    "title": "Research",
-    "section": "",
-    "text": "Research\nMy research sits at the intersection of data science, ecological modeling, and climate science. I use quantitative and computational methods to understand how species respond to environmental change and to characterize spatio-temporal trends in climate.\nI’m also actively expanding into new domains, applying data science to real-world problems in ecological conservation, remote sensing, renewable energy, disease ecology, epidemiology, bioinformatics, and clinical research. I enjoy working with data across disciplines, and I welcome collaborations and projects from any field where quantitative approaches can drive discovery.\nCurrent Projects\nI am currently leading two review studies:\n\nEvaluating AI methods for data cleaning and processing in large biodiversity databases — examining how machine learning and automated pipelines can improve data quality and usability in large-scale ecological datasets.\nAssessing quantitative approaches to modeling species responses to global change — synthesizing statistical and mathematical frameworks used to predict how species respond to shifting environmental conditions."
-  },
-  {
-    "objectID": "publication.html",
-    "href": "publication.html",
+    "objectID": "publications.html",
+    "href": "publications.html",
     "title": "Publications",
     "section": "",
     "text": "Mensah, J. N., Crone, E. E., Lesica, P., & Tenhumberg, B. (2026). Time series length and statistical power to detect environmental drivers of plant demography. Under review, Ecography. Preprint\nMensah, J. N., Louda, S. M., Keeler, K. H., & Tenhumberg, B. (2025). Magnitude, Variation, and Impacts of Insect Foliage Herbivory on Ramet Population of Cirsium undulatum Over 20 Years. Under review, Ecosphere."
   },
   {
-    "objectID": "publication.html#under-review",
-    "href": "publication.html#under-review",
+    "objectID": "publications.html#under-review",
+    "href": "publications.html#under-review",
     "title": "Publications",
     "section": "",
     "text": "Mensah, J. N., Crone, E. E., Lesica, P., & Tenhumberg, B. (2026). Time series length and statistical power to detect environmental drivers of plant demography. Under review, Ecography. Preprint\nMensah, J. N., Louda, S. M., Keeler, K. H., & Tenhumberg, B. (2025). Magnitude, Variation, and Impacts of Insect Foliage Herbivory on Ramet Population of Cirsium undulatum Over 20 Years. Under review, Ecosphere."
   },
   {
-    "objectID": "publication.html#published",
-    "href": "publication.html#published",
+    "objectID": "publications.html#published",
+    "href": "publications.html#published",
     "title": "Publications",
     "section": "Published",
     "text": "Published\n\nNsor, C. A., Mensah, J. N., Boadi, S., Prempeh, N. O., & Danquah, F. O. (2026). Using woody community structure as an indicator of riparian ecological integrity in Ghana’s Ashanti Region. Biodiversity, 1–17. doi:10.1080/14888386.2026.2690972\nMensah, J. N., Louda, S. M., Keeler, K. H., & Tenhumberg, B. (2025). Delayed Effects of Water‐Limiting Conditions Influence the Ramet Demography of a Native Iterocarpic Thistle. Ecology and Evolution, 15(10), e72259.\nBisselou, K. S., Hilbers, B. G., & Mensah, J. N. (2025). A Simple Mixed‐Effects Modeling for the Precision of Automated Differential Cell Counters Using R. Clinical and Translational Science, 18(5), e70254.\nNsor, C. A., Perry-Amissah, M., Mensah, J. N., Boadi, S., Asigbase, M., Addae-Wireko, L., & Acolatse, R. (2025). Birds’ co-occurrence is mediated by diet, habitat type, and anthropogenic disturbances in Ghana’s Central Region. Avian Research, 16(3), 100251.\nNsor, C. A., Dei, N. A. A., Mensah, J. N., Acolatse, R., & Danquah, E. (2023). Bird community structure and habitat association in Owabi Wildlife Sanctuary, Ashanti Region (Ghana). Wildlife Research.\nNsor, C. A., Acolatse, R., Mensah, J. N., Oppong, S. K., Dompreh, D., & Addai-Wireko, L. (2022). Structural assemblages of plant species in the Owabi Ramsar Wetland in the Ashanti Region of Ghana. African Journal of Aquatic Science, 47(1), 100–114.\nNsor, C. A., Mensah, J. N., & Agumenu, V. (2021). Riparian vegetation dynamics in protected and unprotected areas, Kumawu District—Ashanti Region (Ghana). Tropical Ecology, 62(3), 329–346.\nNsor, C. A., Mensah, J. N., Barnes, V. R., & Akomatey, P. K. (2021). Anthropogenic drivers of plant species coexistence in selected riparian systems, Kumawu district, Ashanti region (Ghana). Journal of Freshwater Ecology, 36(1), 323–344."
@@ -222,6 +180,62 @@
     "title": "Seeing the Unseeable: Visualizing, Clustering, and Classifying High-Dimensional Data",
     "section": "Takeaways",
     "text": "Takeaways\n\nA plain scatter plot of high-dimensional data is almost always misleading — it’s showing you 2 out of possibly hundreds of measurements, essentially at random.\nPCA, MDS, and t-SNE each answer a different question: PCA maximizes spread, MDS preserves overall distances, t-SNE preserves local neighborhoods. They can (and often do) produce visually different-looking plots of the exact same data — that’s not a bug, it’s a reflection of what each method is actually optimizing for.\nK-means needs you to choose the number of clusters, but statistical diagnostics — the elbow method, the silhouette score, and the more detailed Yellowbrick silhouette visualizer — can recover the correct number even without ever seeing the true labels.\nStandardizing your measurements before using any distance-based method is essential whenever your raw measurements are on different numeric scales.\nOn real wine chemistry data, unsupervised clustering (blind to labels) successfully rediscovered the 3 true grape varieties, and a supervised classifier trained on just 2 well-chosen chemical measurements performed nearly as well as one trained on all 13.\nAlways evaluate a classifier on data it never saw during training or tuning — that’s the only honest measure of how it will perform on genuinely new samples."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "John N. Mensah (Ph.D.)",
+    "section": "",
+    "text": "I’m John Nkrumah Mensah, and I’m so glad you’re here!\nI am interested in turning messy, real-world biological and environmental data into models that make predictions people can act on. My work sits at the intersection of data science, biology, and climate science, where I use quantitative tools to understand complex ecological and environmental problems. Over the past years, my research has centered on using and developing spatio-temporal, quantitative, and mechanistic modeling approaches to evaluate the impacts of biotic and abiotic conditions on species populations and distribution.\nWhat excites me most is turning complex data into insights that help us better understand the world around us. My research has taken me from long-term field studies and experiments to statistical modeling, machine learning, and spatial and temporal analysis. Along the way, I’ve built a broad toolkit spanning classical statistics (Bayesian methods, generalized additive models, mixed-effects models), functional data analysis, mathematical modeling, and machine learning.\nThis website is a window into my journey as a scientist, data analyst, and lifelong learner. Here, you’ll find examples of my research, publications, projects, data science work, and the tools and ideas that continue to shape my thinking.\nWhether you’re an employer looking for a quantitative scientist or data scientist, a researcher interested in collaboration, or simply someone curious about my work, I invite you to explore. I hope you’ll find something that sparks your interest – and perhaps an opportunity for us to work together, exchange ideas, or build something meaningful."
+  },
+  {
+    "objectID": "index.html#hello-and-welcome",
+    "href": "index.html#hello-and-welcome",
+    "title": "John N. Mensah (Ph.D.)",
+    "section": "",
+    "text": "I’m John Nkrumah Mensah, and I’m so glad you’re here!\nI am interested in turning messy, real-world biological and environmental data into models that make predictions people can act on. My work sits at the intersection of data science, biology, and climate science, where I use quantitative tools to understand complex ecological and environmental problems. Over the past years, my research has centered on using and developing spatio-temporal, quantitative, and mechanistic modeling approaches to evaluate the impacts of biotic and abiotic conditions on species populations and distribution.\nWhat excites me most is turning complex data into insights that help us better understand the world around us. My research has taken me from long-term field studies and experiments to statistical modeling, machine learning, and spatial and temporal analysis. Along the way, I’ve built a broad toolkit spanning classical statistics (Bayesian methods, generalized additive models, mixed-effects models), functional data analysis, mathematical modeling, and machine learning.\nThis website is a window into my journey as a scientist, data analyst, and lifelong learner. Here, you’ll find examples of my research, publications, projects, data science work, and the tools and ideas that continue to shape my thinking.\nWhether you’re an employer looking for a quantitative scientist or data scientist, a researcher interested in collaboration, or simply someone curious about my work, I invite you to explore. I hope you’ll find something that sparks your interest – and perhaps an opportunity for us to work together, exchange ideas, or build something meaningful."
+  },
+  {
+    "objectID": "index.html#education",
+    "href": "index.html#education",
+    "title": "John N. Mensah (Ph.D.)",
+    "section": "Education",
+    "text": "Education\nPh.D. in Biological Sciences\nMinor: Statistics\nSpecialization: Ecology, Evolution and Behaviour\nUniversity of Nebraska–Lincoln\nB.Sc. Forest Resources Technology\nSpecialization: Ecotourism and Forest Recreation\nKwame Nkrumah University of Science and Technology"
+  },
+  {
+    "objectID": "index.html#currently",
+    "href": "index.html#currently",
+    "title": "John N. Mensah (Ph.D.)",
+    "section": "Currently",
+    "text": "Currently\nI’m on the job market for postdoctoral and research positions in quantitative ecology and data science."
+  },
+  {
+    "objectID": "research.html",
+    "href": "research.html",
+    "title": "Research",
+    "section": "",
+    "text": "My research sits at the intersection of data science, ecological modeling, and climate science. I use quantitative and computational methods to understand how species respond to environmental change and to characterize spatio-temporal trends in climate.\nI’m also actively expanding into new domains, applying data science to real-world problems in ecological conservation, remote sensing, renewable energy, disease ecology, epidemiology, bioinformatics, and clinical research. I enjoy working with data across disciplines, and I welcome collaborations and projects from any field where quantitative approaches can drive discovery."
+  },
+  {
+    "objectID": "research.html#current-projects",
+    "href": "research.html#current-projects",
+    "title": "Research",
+    "section": "Current Projects",
+    "text": "Current Projects\nI am currently involved in two review studies:\n\nEvaluating AI methods for data cleaning and processing in large biodiversity databases – examining how machine learning and automated pipelines can improve data quality and usability in large-scale ecological datasets.\nAssessing quantitative approaches to modeling species responses to global change – synthesizing statistical and mathematical frameworks used to predict how species respond to shifting environmental conditions."
+  },
+  {
+    "objectID": "gallery.html",
+    "href": "gallery.html",
+    "title": "Gallery",
+    "section": "",
+    "text": "Uploading soon!!!"
+  },
+  {
+    "objectID": "blog/index.html",
+    "href": "blog/index.html",
+    "title": "Blog",
+    "section": "",
+    "text": "Seeing the Unseeable: Visualizing, Clustering, and Classifying High-Dimensional Data\n\n\n\nPython\n\nmachine-learning\n\ndimensionality-reduction\n\n\n\nA beginner-friendly walkthrough of PCA, MDS, t-SNE, K-means, and logistic regression — from simulated data to a real chemistry dataset\n\n\n\n\n\nJul 24, 2026\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "about.html",
