@@ -1,0 +1,24 @@
+---
+title: "Publications"
+format: html
+editor: visual
+---
+
+## *Under Review*
+
+- **Mensah, J. N.**, Crone, E. E., Lesica, P., & Tenhumberg, B. (2026). *Time series length and statistical power to detect environmental drivers of plant demography.* Under review, *Ecography*. [Preprint](https://doi.org/10.22541/authorea.15006289/v1)
+
+- **Mensah, J. N.**, Louda, S. M., Keeler, K. H., & Tenhumberg, B. (2025). *Magnitude, Variation, and Impacts of Insect Foliage Herbivory on Ramet Population of Cirsium undulatum Over 20 Years.* Under review, *Ecosphere*.
+
+## *Published*
+
+1.  Nsor, C. A., **Mensah, J. N.**, Boadi, S., Prempeh, N. O., & Danquah, F. O. (2026). Using woody community structure as an indicator of riparian ecological integrity in Ghana's Ashanti Region. *Biodiversity*, 1–17. [doi:10.1080/14888386.2026.2690972](https://doi.org/10.1080/14888386.2026.2690972)
+2.  **Mensah, J. N.**, Louda, S. M., Keeler, K. H., & Tenhumberg, B. (2025). Delayed Effects of Water‐Limiting Conditions Influence the Ramet Demography of a Native Iterocarpic Thistle. *Ecology and Evolution*, 15(10), e72259.
+3.  Bisselou, K. S., Hilbers, B. G., & **Mensah, J. N.** (2025). A Simple Mixed‐Effects Modeling for the Precision of Automated Differential Cell Counters Using R. *Clinical and Translational Science*, 18(5), e70254.
+4.  Nsor, C. A., Perry-Amissah, M., **Mensah, J. N.**, Boadi, S., Asigbase, M., Addae-Wireko, L., & Acolatse, R. (2025). Birds' co-occurrence is mediated by diet, habitat type, and anthropogenic disturbances in Ghana's Central Region. *Avian Research*, 16(3), 100251.
+5.  Nsor, C. A., Dei, N. A. A., **Mensah, J. N.**, Acolatse, R., & Danquah, E. (2023). Bird community structure and habitat association in Owabi Wildlife Sanctuary, Ashanti Region (Ghana). *Wildlife Research*.
+6.  Nsor, C. A., Acolatse, R., **Mensah, J. N.**, Oppong, S. K., Dompreh, D., & Addai-Wireko, L. (2022). Structural assemblages of plant species in the Owabi Ramsar Wetland in the Ashanti Region of Ghana. *African Journal of Aquatic Science*, 47(1), 100–114.
+7.  Nsor, C. A., **Mensah, J. N.**, & Agumenu, V. (2021). Riparian vegetation dynamics in protected and unprotected areas, Kumawu District—Ashanti Region (Ghana). *Tropical Ecology*, 62(3), 329–346.
+8.  Nsor, C. A., **Mensah, J. N.**, Barnes, V. R., & Akomatey, P. K. (2021). Anthropogenic drivers of plant species coexistence in selected riparian systems, Kumawu district, Ashanti region (Ghana). *Journal of Freshwater Ecology*, 36(1), 323–344.
+
+## 

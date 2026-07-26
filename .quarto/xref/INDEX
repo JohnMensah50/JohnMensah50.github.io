@@ -14,5 +14,20 @@
   },
   "blog/posts/high-dim-viz-clustering-python/index.qmd": {
     "index.html": "16e948d1"
+  },
+  "Research.qmd": {
+    "Research.html": "07c23843"
+  },
+  "publication.qmd": {
+    "publication.html": "5be549f7"
+  },
+  "publications.qmd": {
+    "publications.html": "e8cc48dd"
+  },
+  "research.qmd": {
+    "research.html": "c024828d"
+  },
+  "gallery.qmd": {
+    "gallery.html": "e4719616"
   }
 }

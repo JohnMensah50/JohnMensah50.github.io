@@ -16,9 +16,9 @@ editor: visual
 
 - Experienced in translating ambiguous research and operational questions into well-defined analytical and modeling framework, developing and validating predictive models, and communicating complex quantitative results to technical and non-technical audiences.
 
-- Led statistical analysis on \~8 [peer-reviewed publications](https://scholar.google.com/citations?hl=en&user=NT9u2JEAAAAJ)), requiring model validation defensible to expert reviewers and clear communication of complex methods to non-specialist audiences.
+- Led statistical analysis on [peer-reviewed publications](https://scholar.google.com/citations?hl=en&user=NT9u2JEAAAAJ), requiring model validation defensible to expert reviewers and clear communication of complex methods to non-specialist audiences.
 
-- Adaptable and committed to expanding production-oriented data science skills, including scalable ML pipelines, cloud-based analytics, and Databricks, while collaborating across disciplines to develop practical, data-driven solutions to complex real-world problems.
+- Adaptable and committed to expanding production-oriented data science skills, while collaborating across disciplines to develop practical, data-driven solutions to complex real-world problems.
 
 ## Education
 
@@ -53,18 +53,17 @@ Advisor: Collins Ayini Nsor, Ph.D.
 **Summer Biostatistics Intern** — Streck, La Vista, Nebraska, USA (06/2023 – 08/2025)
 
 - Developed automated R code for evaluating precision and stability of Streck's control materials for use with Sysmex XR 20/20 and Beckman Coulter DxFlex analyzers
-- Led a training session for a 5-member R&D team on using R for precision/stability evaluation
+- Led a training session for a 3-member R&D team on using R for precision/stability evaluation
 
 **Research Assistant** — Kwame Nkrumah University of Science and Technology (08/2019 – 08/2020)
 
 - Mentored students in research development and data analysis
-- Reviewed student theses and advised on analytical approach
+- Reviewed student theses and provided feed-back on analytical approach
 
 ## Publications
 
 ### Under review
 
-- Rachel King, Deirdre Loughnan, **John N. Mensah**, Casey O'Hara, Thilina D. Surasinghe, Titilayo T. Tajudeen, Matthew W. Austin. The promise of artificial intelligence to automate detection and mitigation of errors in large biodiversity datasets (in preparation; *Ecology and Evolution*)
 - **Mensah, J. N.**, Crone, E. E., Lesica, P., & Tenhumberg, B. (2026). Time series length and statistical power to detect environmental drivers of plant demography (under review: *Ecography*). [Preprint](https://doi.org/10.22541/authorea.15006289/v1)
 - **Mensah, J. N.**, Louda, S. M., Keeler, K. H., & Tenhumberg, B. (2025). Magnitude, Variation, and Impacts of Insect Foliage Herbivory on Ramet Population of *Cirsium undulatum* Over 20 Years (under review: *Ecosphere*)
 
@@ -121,7 +120,7 @@ Advisor: Collins Ayini Nsor, Ph.D.
 
 :::: grid
 ::: g-col-6
--  ArcGIS Pro
+- ArcGIS Pro
 - Time series analysis
 - Machine (Deep) learning
 - Multivariate analysis
@@ -140,7 +139,7 @@ Advisor: Collins Ayini Nsor, Ph.D.
 - Graduate student representative, SBS Community Conversation committee
 - Reviewer, *Journal of Freshwater Ecology*
 - Copy editor and reviewer, *Journal of Emerging Investigators*
-- Climate and Justice Team, St. Paul United Methodist Church, Lincoln, NE — funding proposals for tree planting; carbon footprint reduction guidelines
+- Climate and Justice Team, St. Paul United Methodist Church, Lincoln, NE — writing funding proposals for tree planting; carbon footprint reduction guidelines
 
 ## References
 

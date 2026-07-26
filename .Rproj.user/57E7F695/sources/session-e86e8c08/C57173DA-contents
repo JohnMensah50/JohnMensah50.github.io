@@ -1,5 +1,5 @@
 ---
-title: "John N. Mensah"
+title: "John N. Mensah (Ph.D.)"
 image: profile.jpg
 about:
   template: trestles
@@ -25,31 +25,18 @@ about:
       href: mailto:you@example.com
 ---
 
-## About
+## Hello, and welcome!
 
-I'm a Ph.D. candidate in Biological Sciences (minor: Statistics) at the
-University of Nebraska–Lincoln, defending in August 2026. My work sits at
-the intersection of plant demography, remote sensing, and global change
-biology — I ask how long-term environmental stress and disturbance shape
-plant population dynamics, and how modern spatial data can scale that
-understanding beyond the plot level.
+I'm John Nkrumah Mensah, and I'm so glad you're here!\
+I am interested in turning messy, real-world biological and environmental data into models that make predictions people can act on. My work sits at the intersection of data science, biology, and climate science, where I use quantitative tools to understand complex ecological and environmental problems.
+Over the past years, my research has centered on using and developing spatio-temporal, quantitative, and mechanistic modeling approaches to evaluate the impacts of biotic and abiotic conditions on species populations and distribution.
 
-My dissertation examines lagged water-stress effects and insect herbivory
-on native perennial thistles (*Cirsium undulatum*) using more than 20 years
-of field data. I'm currently expanding into UAV-based multispectral remote
-sensing, building an R pipeline to link vegetation indices and spectral
-texture to grassland community resilience.
+What excites me most is turning complex data into insights that help us better understand the world around us. My research has taken me from long-term field studies and experiments to statistical modeling, machine learning, and spatial and temporal analysis. Along the way, I've built a broad toolkit spanning classical statistics (Bayesian methods, generalized additive models, mixed-effects models), functional data analysis, mathematical modeling, and machine learning.
 
-I'm on the job market for postdoctoral and research positions in
-quantitative ecology, spatial ecology, and data science.
+This website is a window into my journey as a scientist, data analyst, and lifelong learner. Here, you'll find examples of my research, publications, projects, data science work, and the tools and ideas that continue to shape my thinking.
 
-## Research interests
-
-- Long-term plant population and community demography
-- Global change effects on grassland resilience
-- Multispectral / UAV remote sensing for ecological monitoring
-- Statistical and machine learning methods for ecological inference
-  (GLMMs, GAMs, IPMs, Random Forest, XGBoost)
+Whether you're an employer looking for a quantitative scientist or data scientist, a researcher interested in collaboration, or simply someone curious about my work, I invite you to explore. I hope you'll find something that sparks your interest – and perhaps an opportunity for us to work together, exchange ideas, or build something meaningful.
+ 
 
 ## Education
 
@@ -64,7 +51,6 @@ Kwame Nkrumah University of Science and Technology
 
 ## Currently
 
-Working on the **DRAGNet grassland resilience project**, combining UAV
-multispectral imagery with field vegetation data across five experimental
-treatments (2024–2025) to quantify community-level resilience to disturbance.
+I'm on the job market for postdoctoral and research positions in
+quantitative ecology and data science.
 
