@@ -1,0 +1,18 @@
+---
+title: "Research"
+editor: visual
+---
+
+**Research**
+
+My research sits at the intersection of data science, ecological modeling, and climate science. I use quantitative and computational methods to understand how species respond to environmental change and to characterize spatio-temporal trends in climate.
+
+I'm also actively expanding into new domains, applying data science to real-world problems in ecological conservation, remote sensing, renewable energy, disease ecology, epidemiology, bioinformatics, and clinical research. I enjoy working with data across disciplines, and I welcome collaborations and projects from any field where quantitative approaches can drive discovery.
+
+**Current Projects**
+
+I am currently leading two review studies:
+
+1.  *Evaluating AI methods for data cleaning and processing in large biodiversity databases* — examining how machine learning and automated pipelines can improve data quality and usability in large-scale ecological datasets.
+
+2.  *Assessing quantitative approaches to modeling species responses to global change* — synthesizing statistical and mathematical frameworks used to predict how species respond to shifting environmental conditions.

@@ -306,7 +306,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="setup" class="level2">
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<div id="b01b2301" class="cell" data-execution_count="1">
+<div id="59ecdb5c" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
@@ -316,11 +316,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="part-1-building-fake-data-where-we-already-know-the-answer">Part 1 — Building “fake” data where we already know the answer</h2>
 <p>Before trying these techniques on real, messy data, it’s smart to first try them on data we built ourselves — because then we already know the correct answer, and we can check whether the method actually found it.</p>
 <p>Here’s the plan: we’ll invent <strong>4 make-believe groups</strong> of data points, each living in <strong>100 dimensions</strong> (think of 100 as “100 different measurements per sample” — could be 100 genes, 100 chemical readings, anything). Each group will be centered in a different part of that 100-dimensional space, so a perfect method should be able to tell all 4 groups apart.</p>
-<div id="85019e20" class="cell" data-execution_count="2">
+<div id="f14c64ab" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> ortho_group  <span class="co"># generates random rotation matrices</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>ortho_group</code> is a tool for generating a random <strong>rotation</strong> — a mathematical operation that spins a shape around without stretching or squishing it, kind of like rotating a photograph without warping it. We’ll use this in a minute to make one of our 4 groups look more “realistic” (tilted at a random angle) instead of perfectly lined up with the axes, the way real-world data usually is.</p>
-<div id="8ea0a3e0" class="cell" data-execution_count="3">
+<div id="2c9b0869" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Draws random points from `n // (# groups)` samples per group, from a multivariate</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># normal ("bell curve" in many dimensions) distribution with given means and shapes.</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sample_gmm(n, mu, cov, return_labels<span class="op">=</span><span class="va">True</span>):</span>
@@ -337,7 +337,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>It keeps a label for every point recording which group it “belongs to” — this is our <strong>ground truth</strong>, the answer key we’ll use later to check whether our methods got it right.</li>
 <li>It shuffles all the points together at the end, so the data doesn’t come “pre-sorted” by group (which would be cheating — real data never comes conveniently sorted for you).</li>
 </ul>
-<div id="e9ec8dcb" class="cell" data-execution_count="4">
+<div id="bc26c087" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> <span class="dv">100</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>mu <span class="op">=</span> np.zeros((<span class="dv">4</span>,d))</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>mu[<span class="dv">0</span>,<span class="dv">1</span>:]<span class="op">=</span><span class="dv">1</span></span>
@@ -348,7 +348,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>mu[<span class="dv">3</span>,<span class="dv">96</span>]<span class="op">=</span><span class="dv">2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Here we’re setting the <strong>center point</strong> (“bullseye”) of each of our 4 groups, each one somewhere different in our 100-dimensional space. Group 0 sits at one location, group 1 at another, and so on — each group gets a different pattern of high/low values across the 100 measurements, so no two groups occupy the same territory.</p>
-<div id="bd937506" class="cell" data-execution_count="5">
+<div id="e0c84542" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">350</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>d_cov<span class="op">=</span>np.zeros((<span class="dv">4</span>,d,d))</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>d_cov[<span class="dv">0</span>] <span class="op">=</span> <span class="fl">0.05</span><span class="op">*</span>np.eye(d)</span>
@@ -368,7 +368,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Group 2 is a bigger, but still round, cluster (a looser huddle).</li>
 <li>Group 1 is stretched into a cigar/football shape and then tilted at a random angle (using the rotation tool from before) — this is meant to look more like messy real-world data, where clusters aren’t neat circles.</li>
 </ul>
-<div id="307a5c4f" class="cell" data-execution_count="6">
+<div id="f58c4e20" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>X,y <span class="op">=</span> sample_gmm(<span class="dv">1200</span>,mu,cov)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Data shape:"</span>, X.shape)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Number of groups:"</span>, <span class="bu">len</span>(np.unique(y)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -381,7 +381,7 @@ Number of groups: 4</code></pre>
 </section>
 <section id="part-2-why-a-normal-scatter-plot-fails-here" class="level2">
 <h2 class="anchored" data-anchor-id="part-2-why-a-normal-scatter-plot-fails-here">Part 2 — Why a normal scatter plot fails here</h2>
-<div id="e6a4147b" class="cell" data-execution_count="7">
+<div id="311c9ad7" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>,<span class="dv">5</span>))</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].scatter(X[:,<span class="dv">0</span>],X[:,<span class="dv">1</span>])</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"Raw scatter (no group info)"</span>,size<span class="op">=</span><span class="dv">14</span>)</span>
@@ -410,14 +410,14 @@ Number of groups: 4</code></pre>
 <section id="part-3-pca-finding-the-best-2d-summary" class="level2">
 <h2 class="anchored" data-anchor-id="part-3-pca-finding-the-best-2d-summary">Part 3 — PCA: finding the “best” 2D summary</h2>
 <p><strong>Plain-language idea:</strong> instead of picking 2 of our original 100 measurements at random, what if we let the computer search for the <em>best possible</em> 2 new “measurements” — ones specifically chosen to spread the data out as much as possible? That’s what PCA (Principal Component Analysis) does.</p>
-<div id="bef28b0d" class="cell" data-execution_count="8">
+<div id="babac369" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> PCA</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>pca <span class="op">=</span> PCA()</span>
 <span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> pca.fit_transform(X)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><code>PCA()</code> creates the tool; <code>.fit_transform(X)</code> does two things at once — it studies our 100-dimensional data to find the best new “viewing angles” (called <strong>principal components</strong>), and then immediately re-expresses every data point in terms of those new angles. The result, <code>z</code>, is a new table the same size as <code>X</code>, but now the <em>first</em> column captures the most spread-out view of the data, the second column the next-most, and so on.</p>
-<div id="4656379e" class="cell" data-execution_count="9">
+<div id="eb4ceb83" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>plt.scatter(z[:,<span class="dv">0</span>],z[:,<span class="dv">1</span>],c<span class="op">=</span>y)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"First 2 Principal Components (colored by true group)"</span>,size<span class="op">=</span><span class="dv">16</span>)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"PC 1"</span>,size<span class="op">=</span><span class="dv">13</span>)</span>
@@ -437,7 +437,7 @@ Number of groups: 4</code></pre>
 <h3 class="anchored" data-anchor-id="how-many-principal-components-should-we-actually-keep">How many “principal components” should we actually keep?</h3>
 <p>If PC1 and PC2 already show clear groups, do we need PC3, PC4, … PC100 at all? Here are three ways to decide, explained simply:</p>
 <p><strong>Method 1 — The “elbow” plot.</strong> Plot how much information (variance) each component captures, in order. Early components usually capture a lot; later ones capture almost nothing. We’re looking for the point where the curve flattens out — like the elbow of a bent arm.</p>
-<div id="c05f77fa" class="cell" data-execution_count="10">
+<div id="40cc3cba" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">8</span>,<span class="dv">5</span>))</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>plt.plot(np.arange(<span class="dv">1</span>,<span class="dv">101</span>),pca.explained_variance_ratio_[<span class="dv">0</span>:<span class="dv">100</span>],marker<span class="op">=</span><span class="st">'o'</span>,markersize<span class="op">=</span><span class="dv">3</span>)</span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"</span><span class="sc">% o</span><span class="st">f Information (Variance) Captured by Each Component"</span>,size<span class="op">=</span><span class="dv">15</span>)</span>
@@ -454,7 +454,7 @@ Number of groups: 4</code></pre>
 </div>
 <p><strong>Interpreting this plot:</strong> the first component captures far more information than any single one of our original 100 measurements would on its own — that’s the whole point of PCA. Notice how quickly the curve drops and then flattens near zero — that flat tail means components 5, 6, 7… onward are basically capturing noise, not real structure. This tells us we could safely summarize our whole 100-dimensional dataset using just a handful of components without losing much real information.</p>
 <p><strong>Method 2 — Cumulative variance threshold.</strong> Instead of eyeballing an elbow, just decide “I want to keep 85% of the total information” and let the math tell us exactly how many components that requires.</p>
-<div id="9b14c726" class="cell" data-execution_count="11">
+<div id="089542dd" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>cumulative <span class="op">=</span> np.cumsum(pca.explained_variance_ratio_)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>n_needed <span class="op">=</span> np.where(cumulative <span class="op">&gt;=</span> <span class="fl">.85</span>)[<span class="dv">0</span>][<span class="dv">0</span>] <span class="op">+</span> <span class="dv">1</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -486,7 +486,7 @@ Number of groups: 4</code></pre>
 <section id="part-4-mds-a-different-philosophy-for-the-same-goal" class="level2">
 <h2 class="anchored" data-anchor-id="part-4-mds-a-different-philosophy-for-the-same-goal">Part 4 — MDS: a different philosophy for the same goal</h2>
 <p><strong>Plain-language idea:</strong> PCA looks for directions of maximum spread. MDS (Multidimensional Scaling) takes a totally different approach: it tries to place points on a 2D page so that <strong>the distances between them on the page match, as closely as possible, how far apart they really are</strong> in the original 100-dimensional space. It’s like trying to flatten a globe into a 2D map while distorting distances as little as possible.</p>
-<div id="4d14c572" class="cell" data-execution_count="12">
+<div id="1fa4f54c" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.manifold <span class="im">import</span> MDS</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>mds <span class="op">=</span> MDS(n_components<span class="op">=</span><span class="dv">2</span>, eps<span class="op">=</span><span class="fl">1e-5</span>, n_init<span class="op">=</span><span class="dv">4</span>)</span>
@@ -522,7 +522,7 @@ Number of groups: 4</code></pre>
 <section id="part-5-t-sne-built-for-finding-tight-local-clusters" class="level2">
 <h2 class="anchored" data-anchor-id="part-5-t-sne-built-for-finding-tight-local-clusters">Part 5 — t-SNE: built for finding tight local clusters</h2>
 <p><strong>Plain-language idea:</strong> t-SNE takes yet another approach — instead of trying to preserve <em>all</em> pairwise distances (like MDS) or maximize spread (like PCA), it focuses specifically on preserving <strong>who’s in whose immediate neighborhood</strong>. It’s very good at pulling tight clusters apart visually, but — and this is important — <strong>the distance <em>between</em> clusters on a t-SNE plot doesn’t mean anything reliable.</strong> Two clusters that look close together in a t-SNE plot might actually be very far apart in the real data, or vice versa.</p>
-<div id="e2de7ceb" class="cell" data-execution_count="13">
+<div id="1f42e958" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.manifold <span class="im">import</span> TSNE</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>tsne_40 <span class="op">=</span> TSNE(n_components<span class="op">=</span><span class="dv">2</span>, perplexity<span class="op">=</span><span class="dv">40</span>, random_state<span class="op">=</span><span class="dv">0</span>)</span>
@@ -554,7 +554,7 @@ Number of groups: 4</code></pre>
 <section id="combining-pca-and-t-sne" class="level3">
 <h3 class="anchored" data-anchor-id="combining-pca-and-t-sne">Combining PCA and t-SNE</h3>
 <p>A common, genuinely useful trick: use PCA first to strip out low-information “noise” dimensions, then hand the <em>cleaned-up</em> data to t-SNE.</p>
-<div id="c5a38d08" class="cell" data-execution_count="14">
+<div id="7084b2fc" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>tsne_on_pca <span class="op">=</span> TSNE(n_components<span class="op">=</span><span class="dv">2</span>, perplexity<span class="op">=</span><span class="dv">40</span>, random_state<span class="op">=</span><span class="dv">0</span>)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>z_tsne_pca <span class="op">=</span> tsne_on_pca.fit_transform(z[:,<span class="dv">0</span>:<span class="dv">10</span>])</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -575,7 +575,7 @@ Number of groups: 4</code></pre>
 <section id="when-does-t-sne-clearly-beat-pca" class="level3">
 <h3 class="anchored" data-anchor-id="when-does-t-sne-clearly-beat-pca">When does t-SNE clearly beat PCA?</h3>
 <p>Let’s build a harder test case: <strong>25 separate groups</strong> instead of 4, each one tucked into a different single dimension.</p>
-<div id="3b8b13e9" class="cell" data-execution_count="15">
+<div id="6aef3c6e" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>mu2 <span class="op">=</span> np.zeros((<span class="dv">25</span>,<span class="dv">100</span>))</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">25</span>):</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    mu2[i,i] <span class="op">=</span> <span class="dv">1</span></span>
@@ -612,7 +612,7 @@ Number of groups: 4</code></pre>
 <section id="part-6-k-means-letting-the-computer-find-groups-on-its-own" class="level2">
 <h2 class="anchored" data-anchor-id="part-6-k-means-letting-the-computer-find-groups-on-its-own">Part 6 — K-means: letting the computer find groups on its own</h2>
 <p>Everything so far has been about <em>visualizing</em> groups we already knew about. Now let’s flip it around: <strong>pretend we don’t know the answer</strong>, and ask the computer to find groups for us. This is called <strong>clustering</strong>, and K-means is the most common starting point.</p>
-<div id="40a62607" class="cell" data-execution_count="16">
+<div id="fb213538" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.cluster <span class="im">import</span> KMeans</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>kmeans <span class="op">=</span> KMeans(n_clusters<span class="op">=</span><span class="dv">4</span>, n_init<span class="op">=</span><span class="dv">10</span>)</span>
@@ -642,7 +642,7 @@ Number of groups: 4</code></pre>
 <h3 class="anchored" data-anchor-id="how-many-clusters-are-really-there-two-diagnostic-tools">How many clusters are really there? Two diagnostic tools</h3>
 <p>In real life, we don’t get to peek at the answer key. So how would we know to pick <code>k=4</code> if we hadn’t built this data ourselves? Two common diagnostics:</p>
 <p><strong>Diagnostic 1 — The elbow method.</strong> Fit K-means for several different values of <code>k</code>, and for each one, measure the total “wobbliness” left inside the clusters (technically called <em>inertia</em>, or within-cluster sum of squares — basically, how far, on average, points are from their own cluster’s center).</p>
-<div id="54bcc865" class="cell" data-execution_count="17">
+<div id="84838020" class="cell" data-execution_count="17">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>all_kmeans <span class="op">=</span> [KMeans(n_clusters<span class="op">=</span>i<span class="op">+</span><span class="dv">1</span>, n_init<span class="op">=</span><span class="dv">100</span>).fit(X) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">8</span>)]</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>inertias <span class="op">=</span> [all_kmeans[i].inertia_ <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">8</span>)]</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -662,7 +662,7 @@ Number of groups: 4</code></pre>
 </div>
 <p><strong>Interpreting this plot:</strong> the line always goes down as <code>k</code> increases — that’s expected and not informative by itself (more clusters can only ever make each individual cluster tighter, at the extreme limit of “1 cluster per point” the wobbliness hits zero). What we’re actually looking for is the <strong>elbow</strong> — the point where the line stops dropping steeply and flattens out. That’s the signal that adding more clusters beyond that point isn’t buying you much. If this plot bends sharply around <code>k=4</code>, that’s the diagnostic correctly pointing us back toward the true answer, without ever having seen it.</p>
 <p><strong>Diagnostic 2 — Silhouette score.</strong> For every point, this measures: “am I much closer to my own cluster than to the next-nearest cluster?” It’s averaged into one number per value of <code>k</code>, ranging from -1 (bad clustering) to +1 (great clustering).</p>
-<div id="69382b4a" class="cell" data-execution_count="18">
+<div id="33a02d5b" class="cell" data-execution_count="18">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> silhouette_score</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>avg_silhouette_scores <span class="op">=</span> [silhouette_score(X,all_kmeans[i].labels_) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>,<span class="dv">8</span>)]</span>
@@ -686,7 +686,7 @@ Number of groups: 4</code></pre>
 <section id="a-more-detailed-silhouette-picture-with-the-yellowbrick-visualizer" class="level3">
 <h3 class="anchored" data-anchor-id="a-more-detailed-silhouette-picture-with-the-yellowbrick-visualizer">A more detailed silhouette picture, with the Yellowbrick visualizer</h3>
 <p>The single average silhouette score above hides some detail. <strong>Yellowbrick’s <code>SilhouetteVisualizer</code></strong> shows the silhouette score for <em>every individual point</em>, grouped by cluster, as a set of horizontal bars — this reveals whether some clusters are much “worse” (more mixed-up) than others, which the single average number can hide.</p>
-<div id="3c91b98e" class="cell" data-execution_count="19">
+<div id="aa683d7c" class="cell" data-execution_count="19">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> yellowbrick.cluster <span class="im">import</span> SilhouetteVisualizer</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">NOTE</span><span class="co">: Yellowbrick was written against an older version of scikit-learn's internal API.</span></span>
@@ -699,7 +699,7 @@ Number of groups: 4</code></pre>
 <span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> fitted_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>We only need to define this little fix once. Now let’s look at the silhouette breakdown for a few different values of <code>k</code>, side by side with what the clusters actually look like in our PCA plot:</p>
-<div id="75e60552" class="cell" data-execution_count="20">
+<div id="8367a1be" class="cell" data-execution_count="20">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, <span class="dv">4</span>):  <span class="co"># shows k = 2, 3, 4 clusters</span></span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    fig, (ax1, ax2) <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>,<span class="fl">4.5</span>))</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    model <span class="op">=</span> as_clusterer(all_kmeans[i])</span>
@@ -741,7 +741,7 @@ Number of groups: 4</code></pre>
 <section id="part-7-real-data-applying-everything-to-actual-wine-chemistry" class="level2">
 <h2 class="anchored" data-anchor-id="part-7-real-data-applying-everything-to-actual-wine-chemistry">Part 7 — Real data: applying everything to actual wine chemistry</h2>
 <p>Time to leave invented data behind. We’ll use a classic, real dataset: chemical measurements taken from wines made from <strong>3 different grape cultivars</strong> grown in the same region of Italy.</p>
-<div id="31553183" class="cell" data-execution_count="21">
+<div id="bd8843c5" class="cell" data-execution_count="21">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> load_wine</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>features, target <span class="op">=</span> load_wine(return_X_y<span class="op">=</span><span class="va">True</span>)</span>
@@ -755,11 +755,11 @@ Number of true grape varieties: 3</code></pre>
 </div>
 </div>
 <p><code>features</code> holds 13 chemical measurements per wine sample (things like alcohol content, magnesium level, color intensity). <code>target</code> holds the true grape variety for each sample — but we’re going to <em>pretend we don’t know this</em> for the clustering part, exactly like a wine scientist trying to verify that 3 chemically distinct styles really exist, using only the chemistry.</p>
-<div id="f97ba8d3" class="cell" data-execution_count="22">
+<div id="ba917bd5" class="cell" data-execution_count="22">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>wine_std <span class="op">=</span> (features <span class="op">-</span> np.mean(features,<span class="dv">0</span>))<span class="op">/</span>np.std(features,<span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><strong>Why this step matters:</strong> our 13 measurements are on wildly different scales — alcohol content might range from 11 to 15, while a pigment measurement might range from 0.1 to 10. Without standardizing (subtracting the average and dividing by the spread, for each measurement), any method that relies on “distance” — which is basically everything we’ve used so far — would be completely dominated by whichever measurement happens to have the biggest raw numbers, regardless of whether that measurement is actually the most chemically meaningful one. Standardizing puts all 13 measurements on equal footing.</p>
-<div id="58ea987c" class="cell" data-execution_count="23">
+<div id="129d2569" class="cell" data-execution_count="23">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>pca_wine <span class="op">=</span> PCA(<span class="dv">5</span>).fit(wine_std)</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>pcs <span class="op">=</span> pca_wine.transform(wine_std)</span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -792,7 +792,7 @@ Number of true grape varieties: 3</code></pre>
 <p><strong>Interpreting this:</strong> without using any group labels at all, all three methods hint at some structure — you can likely make out roughly 3 loosely separated regions in each panel, though the shapes differ (as expected, since each method optimizes for something different, as we discussed above). This is a promising early sign that the wine chemistry data really does contain 3 natural chemical “styles” — exactly matching the number of grape varieties in the real answer key we haven’t looked at yet.</p>
 <section id="how-many-wine-clusters-does-the-data-actually-support" class="level3">
 <h3 class="anchored" data-anchor-id="how-many-wine-clusters-does-the-data-actually-support">How many wine clusters does the data actually support?</h3>
-<div id="967de3f0" class="cell" data-execution_count="24">
+<div id="39f94f89" class="cell" data-execution_count="24">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>inertias_wine <span class="op">=</span> [KMeans(i,n_init<span class="op">=</span><span class="dv">50</span>).fit(wine_std).inertia_ <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>,<span class="dv">6</span>)]</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>silhouettes_wine <span class="op">=</span> [silhouette_score(wine_std,KMeans(i,n_init<span class="op">=</span><span class="dv">50</span>).fit(wine_std).labels_) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>,<span class="dv">6</span>)]</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -817,7 +817,7 @@ Number of true grape varieties: 3</code></pre>
 </div>
 </div>
 <p><strong>Interpreting this:</strong> both diagnostics should point toward <strong>3 clusters</strong> — the elbow plot bends noticeably around <code>k=3</code>, and the silhouette score should peak (or come very close to peaking) at <code>k=3</code> as well. This is a genuinely satisfying result: two completely independent statistical diagnostics, run blind to the true labels, both converge on the same number of natural groups that matches the number of real grape varieties.</p>
-<div id="91ede223" class="cell" data-execution_count="25">
+<div id="426787d1" class="cell" data-execution_count="25">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>, <span class="dv">5</span>):</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    clustering <span class="op">=</span> KMeans(i, n_init<span class="op">=</span><span class="dv">50</span>)</span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    fig, (ax1, ax2) <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>,<span class="fl">4.5</span>))</span>
@@ -859,7 +859,7 @@ Number of true grape varieties: 3</code></pre>
 <section id="comparing-the-final-clustering-against-the-real-answer-key" class="level3">
 <h3 class="anchored" data-anchor-id="comparing-the-final-clustering-against-the-real-answer-key">Comparing the final clustering against the real answer key</h3>
 <p>Now — and only now — let’s check our blind clustering against the true grape varieties.</p>
-<div id="15263758" class="cell" data-execution_count="26">
+<div id="8cf51bee" class="cell" data-execution_count="26">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>clustering <span class="op">=</span> KMeans(<span class="dv">3</span>, n_init<span class="op">=</span><span class="dv">50</span>)</span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>clustering.fit(wine_std)</span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -887,7 +887,7 @@ Number of true grape varieties: 3</code></pre>
 <section id="part-8-classification-predicting-variety-directly-from-chemistry" class="level2">
 <h2 class="anchored" data-anchor-id="part-8-classification-predicting-variety-directly-from-chemistry">Part 8 — Classification: predicting variety directly from chemistry</h2>
 <p>Clustering never got to see the true labels. Now let’s flip to <strong>supervised learning</strong> — we’ll show the model the correct answers during training, and see how well it predicts the variety of <em>new</em> wines it hasn’t seen before.</p>
-<div id="6985facf" class="cell" data-execution_count="27">
+<div id="95994984" class="cell" data-execution_count="27">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression, LogisticRegressionCV</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">317</span>)</span>
@@ -918,7 +918,7 @@ Number of true grape varieties: 3</code></pre>
 <p>Some older tutorials (including the notebook this post is based on) explicitly choose between “one-vs-rest” and “multinomial” strategies using a <code>multi_class</code> argument. Current versions of scikit-learn removed that argument entirely — the library now automatically picks the appropriate multi-class strategy for you. Similarly, <code>penalty="none"</code> (a text string) has been replaced by simply passing the Python value <code>None</code>.</p>
 </div>
 </div>
-<div id="3e26036f" class="cell" data-execution_count="28">
+<div id="7d3cdbdf" class="cell" data-execution_count="28">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>log_reg <span class="op">=</span> LogisticRegression(penalty<span class="op">=</span><span class="va">None</span>).fit(X_train,y_train)</span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Training accuracy:"</span>, <span class="bu">round</span>(log_reg.score(X_train,y_train), <span class="dv">3</span>))</span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Test accuracy:"</span>, <span class="bu">round</span>(log_reg.score(X_test,y_test), <span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -932,7 +932,7 @@ Test accuracy: 0.972</code></pre>
 <section id="adding-regularization" class="level3">
 <h3 class="anchored" data-anchor-id="adding-regularization">Adding regularization</h3>
 <p><strong>Plain-language idea:</strong> regularization is a deliberate “leash” on the model — it penalizes the model for relying too heavily on any one measurement, which usually makes it generalize better to new data instead of over-memorizing the training set.</p>
-<div id="05e55b58" class="cell" data-execution_count="29">
+<div id="aa5ed220" class="cell" data-execution_count="29">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>log_reg <span class="op">=</span> LogisticRegression(penalty<span class="op">=</span><span class="st">"l1"</span>,C<span class="op">=</span><span class="fl">0.1</span>,solver<span class="op">=</span><span class="st">"saga"</span>,max_iter<span class="op">=</span><span class="dv">5000</span>).fit(X_train,y_train)</span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Training accuracy with L1 regularization (C=0.1):"</span>, <span class="bu">round</span>(log_reg.score(X_train,y_train), <span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
@@ -957,7 +957,7 @@ Test accuracy: 0.972</code></pre>
 <section id="letting-cross-validation-choose-the-regularization-strength-for-us" class="level3">
 <h3 class="anchored" data-anchor-id="letting-cross-validation-choose-the-regularization-strength-for-us">Letting cross-validation choose the regularization strength for us</h3>
 <p>Rather than guessing a single value of <code>C</code>, we can have the computer try several candidate values and pick whichever works best.</p>
-<div id="eda4c288" class="cell" data-execution_count="30">
+<div id="f740f3e2" class="cell" data-execution_count="30">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>log_reg <span class="op">=</span> LogisticRegressionCV(cv<span class="op">=</span><span class="dv">5</span>,Cs<span class="op">=</span>[<span class="fl">0.01</span>,<span class="fl">0.1</span>,<span class="dv">1</span>,<span class="dv">10</span>],max_iter<span class="op">=</span><span class="dv">5000</span>,penalty<span class="op">=</span><span class="st">"l1"</span>,solver<span class="op">=</span><span class="st">"saga"</span>)</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>log_reg.fit(X_train,y_train)</span>
 <span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Training accuracy:"</span>, <span class="bu">round</span>(log_reg.score(X_train,y_train), <span class="dv">3</span>))</span>
@@ -973,7 +973,7 @@ Test accuracy (the number that actually matters): 0.972</code></pre>
 </section>
 <section id="using-regularization-to-find-out-which-chemical-measurements-actually-matter" class="level3">
 <h3 class="anchored" data-anchor-id="using-regularization-to-find-out-which-chemical-measurements-actually-matter">Using regularization to find out which chemical measurements actually matter</h3>
-<div id="d39d3ba6" class="cell" data-execution_count="31">
+<div id="3ae71ec9" class="cell" data-execution_count="31">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>coef_importance <span class="op">=</span> np.<span class="bu">sum</span>(np.<span class="bu">abs</span>(log_reg.coef_),axis<span class="op">=</span><span class="dv">0</span>)</span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>feature_names <span class="op">=</span> [<span class="st">"alcohol"</span>,<span class="st">"malic_acid"</span>,<span class="st">"ash"</span>,<span class="st">"alcalinity_of_ash"</span>,<span class="st">"magnesium"</span>,</span>
 <span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>                  <span class="st">"total_phenols"</span>,<span class="st">"flavanoids"</span>,<span class="st">"nonflavanoid_phenols"</span>,<span class="st">"proanthocyanins"</span>,</span>
@@ -999,7 +999,7 @@ Test accuracy (the number that actually matters): 0.972</code></pre>
 <section id="testing-feature-selection-directly-do-the-important-features-actually-matter" class="level3">
 <h3 class="anchored" data-anchor-id="testing-feature-selection-directly-do-the-important-features-actually-matter">Testing feature selection directly: do the important features actually matter?</h3>
 <p>Let’s put that bar chart to the test. We’ll train a model using <strong>only 2 measurements</strong> — first the 2 that scored highest above, then 2 that scored low — and compare accuracy.</p>
-<div id="6f6b8a08" class="cell" data-execution_count="32">
+<div id="4803c13f" class="cell" data-execution_count="32">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>top_2 <span class="op">=</span> np.argsort(coef_importance)[<span class="op">-</span><span class="dv">2</span>:]</span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>bottom_2 <span class="op">=</span> np.argsort(coef_importance)[:<span class="dv">2</span>]</span>
 <span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Top 2 most important features:"</span>, [feature_names[i] <span class="cf">for</span> i <span class="kw">in</span> top_2])</span>
