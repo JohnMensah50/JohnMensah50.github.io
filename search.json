@@ -86,37 +86,30 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "John N. Mensah",
+    "title": "John N. Mensah (Ph.D.)",
     "section": "",
-    "text": "I’m a Ph.D. candidate in Biological Sciences (minor: Statistics) at the University of Nebraska–Lincoln, defending in August 2026. My work sits at the intersection of plant demography, remote sensing, and global change biology — I ask how long-term environmental stress and disturbance shape plant population dynamics, and how modern spatial data can scale that understanding beyond the plot level.\nMy dissertation examines lagged water-stress effects and insect herbivory on native perennial thistles (Cirsium undulatum) using more than 20 years of field data. I’m currently expanding into UAV-based multispectral remote sensing, building an R pipeline to link vegetation indices and spectral texture to grassland community resilience.\nI’m on the job market for postdoctoral and research positions in quantitative ecology, spatial ecology, and data science."
+    "text": "I’m John Mensah, and I’m so glad you’re here!/ I am interested in turning messy, real-world biological and environmental data into models that make predictions people can act on. My work sits at the intersection of data science, biology, and climate science, where I use quantitative tools to understand complex ecological and environmental problems.\nWhat excites me most is turning complex data into insights that help us better understand the world around us. My research has taken me from long-term field studies and experiments to statistical modeling, machine learning, and spatial and temporal analysis. Along the way, I’ve built a broad toolkit spanning classical statistics (Bayesian methods, generalized additive models, mixed-effects models), functional data analysis, mathematical modeling, and machine learning.\nThis website is a window into my journey as a scientist, data analyst, and lifelong learner. Here, you’ll find examples of my research, publications, projects, data science work, and the tools and ideas that continue to shape my thinking.\nWhether you’re an employer looking for a quantitative scientist or data scientist, a researcher interested in collaboration, or simply someone curious about my work, I invite you to explore. I hope you’ll find something that sparks your interest – and perhaps an opportunity for us to work together, exchange ideas, or build something meaningful."
   },
   {
-    "objectID": "index.html#about",
-    "href": "index.html#about",
-    "title": "John N. Mensah",
+    "objectID": "index.html#hello-and-welcome",
+    "href": "index.html#hello-and-welcome",
+    "title": "John N. Mensah (Ph.D.)",
     "section": "",
-    "text": "I’m a Ph.D. candidate in Biological Sciences (minor: Statistics) at the University of Nebraska–Lincoln, defending in August 2026. My work sits at the intersection of plant demography, remote sensing, and global change biology — I ask how long-term environmental stress and disturbance shape plant population dynamics, and how modern spatial data can scale that understanding beyond the plot level.\nMy dissertation examines lagged water-stress effects and insect herbivory on native perennial thistles (Cirsium undulatum) using more than 20 years of field data. I’m currently expanding into UAV-based multispectral remote sensing, building an R pipeline to link vegetation indices and spectral texture to grassland community resilience.\nI’m on the job market for postdoctoral and research positions in quantitative ecology, spatial ecology, and data science."
-  },
-  {
-    "objectID": "index.html#research-interests",
-    "href": "index.html#research-interests",
-    "title": "John N. Mensah",
-    "section": "Research interests",
-    "text": "Research interests\n\nLong-term plant population and community demography\nGlobal change effects on grassland resilience\nMultispectral / UAV remote sensing for ecological monitoring\nStatistical and machine learning methods for ecological inference (GLMMs, GAMs, IPMs, Random Forest, XGBoost)"
+    "text": "I’m John Mensah, and I’m so glad you’re here!/ I am interested in turning messy, real-world biological and environmental data into models that make predictions people can act on. My work sits at the intersection of data science, biology, and climate science, where I use quantitative tools to understand complex ecological and environmental problems.\nWhat excites me most is turning complex data into insights that help us better understand the world around us. My research has taken me from long-term field studies and experiments to statistical modeling, machine learning, and spatial and temporal analysis. Along the way, I’ve built a broad toolkit spanning classical statistics (Bayesian methods, generalized additive models, mixed-effects models), functional data analysis, mathematical modeling, and machine learning.\nThis website is a window into my journey as a scientist, data analyst, and lifelong learner. Here, you’ll find examples of my research, publications, projects, data science work, and the tools and ideas that continue to shape my thinking.\nWhether you’re an employer looking for a quantitative scientist or data scientist, a researcher interested in collaboration, or simply someone curious about my work, I invite you to explore. I hope you’ll find something that sparks your interest – and perhaps an opportunity for us to work together, exchange ideas, or build something meaningful."
   },
   {
     "objectID": "index.html#education",
     "href": "index.html#education",
-    "title": "John N. Mensah",
+    "title": "John N. Mensah (Ph.D.)",
     "section": "Education",
     "text": "Education\nPh.D. in Biological Sciences\nMinor: Statistics\nSpecialization: Ecology, Evolution and Behaviour\nUniversity of Nebraska–Lincoln\nB.Sc. Forest Resources Technology\nSpecialization: Ecotourism and Forest Recreation\nKwame Nkrumah University of Science and Technology"
   },
   {
     "objectID": "index.html#currently",
     "href": "index.html#currently",
-    "title": "John N. Mensah",
+    "title": "John N. Mensah (Ph.D.)",
     "section": "Currently",
-    "text": "Currently\nWorking on the DRAGNet grassland resilience project, combining UAV multispectral imagery with field vegetation data across five experimental treatments (2024–2025) to quantify community-level resilience to disturbance."
+    "text": "Currently\nI’m on the job market for postdoctoral and research positions in quantitative ecology and data science."
   },
   {
     "objectID": "blog/posts/high-dim-viz-clustering-python/index.html",
