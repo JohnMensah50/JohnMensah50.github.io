@@ -1,5 +1,5 @@
 ---
-title: "Seeing the Unseeable: Visualizing, Clustering, and Classifying High-Dimensional Data"
+title: "Dimensionality Reduction: What It Is, and Why Does It Matter?"
 description: "A beginner-friendly walkthrough of PCA, MDS, t-SNE, K-means, and logistic regression — from simulated data to a real chemistry dataset"
 date: 2026-07-24
 categories: [Python, machine-learning, dimensionality-reduction]
