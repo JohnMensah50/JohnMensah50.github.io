@@ -2,6 +2,7 @@
   {
     "listing": "/blog/index.html",
     "items": [
+      "/blog/posts/Sandhills/index.html",
       "/blog/posts/high-dim-viz-clustering-python/index.html"
     ]
   }

@@ -1,0 +1,1309 @@
+---
+title: "Climate Analysis of the Nebraska Sand Hills"
+subtitle: "A geospatial look at how temperature, precipitation, and drought have shifted since 1940 — and what the next few decades may hold"
+author: "John Mensah"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: true
+    code-tools: true
+    code-summary: "Show the R code"
+    fig-width: 9
+    fig-height: 6
+    theme: cosmo
+execute:
+  warning: false
+  message: false
+editor: visual
+---
+
+## Motivation
+
+The Nebraska Sand Hills are the largest sand dune formation in the Western Hemisphere — roughly 20,000 square miles of grass-stabilized dunes in north-central Nebraska. They look like nothing else in the Great Plains: instead of flat cropland, the Sand Hills are rolling grassland held together almost entirely by the roots of native grasses. If that grass cover is ever lost — to drought, overgrazing, or fire — the sand underneath is free to blow, and the region can revert to the active dune field it was a few thousand years ago. That makes the Sand Hills one of the most climate-sensitive rangelands in North America: its stability depends on a fairly narrow balance between how much water the system receives and how much water it loses to heat and evaporation.
+
+This matters far beyond scenery. The Sand Hills sit on top of the Ogallala Aquifer, support one of the country's largest cow-calf cattle industries, and provide critical habitat for grassland birds and pollinators whose populations are declining across the Great Plains. Because the region's vegetation, hydrology, and land use are all tightly coupled to climate, understanding *how the climate here has already changed* — and *how it is projected to change further* — is a first, necessary step toward answering harder ecological questions, such as how plant populations, forage production, and grassland resilience will respond in the coming decades.
+
+This post builds that climate foundation. It combines an 86-year (1940–2025) observational climate record with a 30-year (2045–2074) future climate projection for the Sand Hills, and it uses both to characterize long-term trends and drought dynamics for the region. The workflow itself — extracting an ecoregion boundary, pulling gridded climate data, computing a drought index, testing for trends, and bias-correcting a downscaled climate model — is also a template that can be reused for any other landscape.
+
+## Research Questions
+
+This analysis is organized around four questions:
+
+1.  **Has temperature in the Sand Hills changed detectably over the past \~85 years, and if so, in which seasons is the change strongest?**
+2.  **Has precipitation changed over the same period, and has any change been enough to alter water availability, independent of temperature?**
+3.  **Has the region's *drought status* — a joint measure of water supply (precipitation) and water demand (heat-driven evaporative loss) — shifted across three roughly 30-year "generations" of climate (1941–1970, 1971–2000, 2001–2025)?**
+4.  **Under a moderate-emissions (SSP2-4.5) and a high-emissions (SSP5-8.5) future climate scenario, how much additional warming is the Sand Hills projected to experience by the middle of this century (2045–2074), relative to its historical baseline?**
+
+Together, these four questions move from *what has already happened* (observed trends) to *what is projected to happen next* (future scenarios), which is the standard structure for a regional climate vulnerability assessment.
+
+## Data and Methods, in Plain Language
+
+Before diving into code, here is a short glossary of the key ingredients used throughout this analysis. Skip ahead if you're already familiar with these.
+
+## 
+
+::: callout-note
+- **EPA Level III Ecoregion**: The U.S. Environmental Protection Agency divides the country into nested "ecoregions" based on shared geology, soils, vegetation, and climate. "Nebraska Sand Hills" is one such Level III ecoregion, and its official boundary (a shapefile) is what defines the study area used throughout this post.
+
+- **PRISM climate data** — A gridded (4-km resolution), monthly climate dataset produced by Oregon State University that reconstructs precipitation and temperature across the U.S. back to 1895 using thousands of weather stations plus elevation-aware interpolation. It is the closest thing available to a continuous, spatially complete climate record for the Sand Hills, and it is used here as the **observational baseline**.
+
+- **SPEI (Standardized Precipitation-Evapotranspiration Index)**: A drought index that compares how much water a region *received* (precipitation) to how much water it *lost* to the atmosphere through heat-driven evaporation and plant transpiration (potential evapotranspiration, or PET). A positive SPEI means wetter-than-typical conditions for that location and time window; a negative SPEI means drier-than-typical (drought) conditions. Unlike an index based on precipitation alone, SPEI accounts for the fact that a hotter atmosphere pulls more moisture out of the landscape even if rainfall stays the same — which is exactly the mechanism that makes future drought risk hard to predict from rainfall trends alone.
+
+- **Sen's slope and the Mann-Kendall test**: Two classic, "robust" statistical tools for detecting a long-term trend in noisy, year-to-year data (like annual temperature or precipitation) without assuming the data follow a bell curve. Sen's slope estimates the *rate* of change per year (e.g., °C per year); the Mann-Kendall test's p-value tells us whether that trend is *statistically distinguishable from random year-to-year noise*. A p-value below 0.05 is the conventional cutoff for "the trend is unlikely to be a fluke."
+
+- **LOCA2 downscaled climate projections**: Global climate models (GCMs) simulate the whole planet at a coarse resolution (\~100 km grid cells), which is too coarse to say much about a specific county-sized region. LOCA2 is a statistical "downscaling" method that translates those coarse global simulations down to a fine 6-km grid over North America, preserving the model's large-scale warming signal while adding realistic local detail. Here, one GCM (**ACCESS-CM2**, developed by Australia's CSIRO and Bureau of Meteorology) is used as an illustrative single-model projection.
+
+- **SSP2-4.5 and SSP5-8.5**: "Shared Socioeconomic Pathways" describe alternative futures for global greenhouse gas emissions. SSP2-4.5 is a **moderate** emissions pathway (emissions roughly plateau mid-century); SSP5-8.5 is a **high** emissions pathway (emissions keep rising). They are not predictions — they are "what if" scenarios used to bracket a plausible range of future warming.
+
+- **Bias correction**: Climate models don't reproduce the real historical climate perfectly; a given model might run systematically a few degrees too warm or too cool in a specific location. Bias correction fixes this by comparing the model's *own* historical simulation to the real observational record (PRISM, in this case) for the same historical period, computing the average offset ("bias"), and then applying that same offset to the model's future projection. This puts the future projection on the same numerical scale as the historical observations, so the two can be compared directly.
+:::
+
+The full pipeline below is built entirely in **R**, using `sf` and `terra` for spatial data, `prism` for climate data access, `SPEI` for drought index computation, `trend` for trend testing, and the `tidyverse` for data wrangling and visualization.
+
+------------------------------------------------------------------------
+
+## Part 1 — Defining the Study Area
+
+The first step in any regional analysis is nailing down *exactly* what geographic area we're talking about. The Nebraska Sand Hills is defined here using the EPA's official Level III Ecoregions shapefile for Nebraska, filtered down to the single polygon labeled `"Nebraska Sand Hills"`.
+
+### Step 1.1 — Download the ecoregion shapefile
+
+Run this once in a terminal (not inside R) to fetch and unzip the EPA shapefile:
+
+::: callout-note
+mkdir sandhills_extract && cd sandhills_extract
+
+curl -O <https://dmap-prod-oms-edc.s3.us-east-1.amazonaws.com/ORD/Ecoregions/ne/ne_eco_l3.zip>
+
+unzip ne_eco_l3.zip
+:::
+
+### Step 1.2 — Read the shapefile and isolate the Sand Hills polygon
+
+```{r, warning=FALSE}
+# ---- Load the packages this whole notebook depends on ----
+library(prism)      # programmatic access to PRISM climate data
+library(sf)          # "simple features" — the standard R format for vector spatial data (points/lines/polygons)
+library(raster)      # legacy raster tools, still needed for a couple of PRISM helper functions
+library(dplyr)        # data wrangling (filter, mutate, group_by, summarise, ...)
+library(lubridate)    # date handling
+library(tidyr)         # reshaping data between "wide" and "long" formats
+library(tidyverse)     # umbrella package that also loads ggplot2, purrr, stringr, readr, etc.
+
+# -------------- Paths and constants used throughout this notebook ----------------
+shapefile_path <- "/Users/johnmensah/Documents/ESIIL/SandHills/sandhills_extract/ne_eco_l3.shp"
+prism_dir      <- "prism_data"     # local folder where PRISM downloads are cached
+years_vec      <- 1940:2025        # the full observational record we want
+months_vec     <- 1:12
+# -----------------------------------------------------------------------------------
+
+# Read every EPA Level III ecoregion polygon in Nebraska
+ne_eco <- st_read(shapefile_path)
+
+# Keep only the one polygon that represents the Sand Hills
+poly_sf <- ne_eco[ne_eco$US_L3NAME == "Nebraska Sand Hills", ]
+#nrow(poly_sf)  # sanity check: this should return 1 (one polygon)
+```
+
+The two maps below show (1) all of Nebraska's EPA Level III ecoregions for context, and (2) just the Sand Hills polygon that everything downstream is clipped to.
+
+```{r, warning=FALSE, fig.cap="All EPA Level III ecoregions in Nebraska, colored by ecoregion name."}
+library(ggplot2)
+
+ggplot(ne_eco) +
+  geom_sf(aes(fill = US_L3NAME)) +
+  labs(title = "Nebraska EPA Level III Ecoregions", fill = "Ecoregion") +
+  theme_minimal()
+```
+
+```{r, warning=FALSE, fig.cap="The Nebraska Sand Hills ecoregion — the study area for the rest of this post."}
+ggplot(poly_sf) +
+  geom_sf(fill = "#c9a24b", color = "grey20") +
+  labs(title = "Nebraska Sand Hills (Study Area)") +
+  theme_minimal()
+```
+
+**The** shapefile contains 6 ecoregion polygons for Nebraska with 13 attribute fields, and `nrow(poly_sf)` returning 1 confirms that exactly one of those six is the Sand Hills — which is the polygon used for every spatial "crop and mask" step in the rest of this post.
+
+```{r, warning=FALSE}
+# Reload the target coordinate reference system (CRS) used by the PRISM rasters.
+# This was originally extracted once with crs(ppt_stack) and cached to disk with
+# saveRDS() so it doesn't need to be recomputed every time this notebook re-runs.
+r_crs <- readRDS("r_crs.rds")
+
+# Reproject the Sand Hills polygon into that same CRS so it lines up exactly
+# with the PRISM grid cells (all spatial overlay operations require both
+# layers to share one coordinate system).
+poly_sf <- st_transform(poly_sf, crs = r_crs)
+
+# raster::extract() (an older function still used for a couple of legacy steps
+# below) expects an sp "Spatial" object rather than an sf object, so we keep
+# a Spatial copy around as well.
+poly_sp <- as(poly_sf, "Spatial")
+
+# The rest of the notebook uses the newer, faster `terra` package instead of
+# `raster`/`sp`, so we also build a terra "SpatVector" version of the same polygon.
+library(terra)
+poly_v <- vect("poly_v.gpkg")   # cached copy of poly_sf, saved once with writeVector()
+```
+
+------------------------------------------------------------------------
+
+## Part 2 — Building an 86-Year Observational Climate Record (PRISM, 1940–2025)
+
+With the study-area boundary in hand, the next step is to pull monthly precipitation (`ppt`) and mean temperature (`tmean`) for every 4-km PRISM grid cell that falls inside the Sand Hills, for every month from January 1940 through the most recent available month.
+
+::: callout-important
+## Why so much code below is "commented out"
+
+Downloading 86 years × 12 months × 2 climate variables (precipitation and temperature) at 4-km resolution from PRISM's servers takes roughly **10–20 minutes** and creates several hundred megabytes of raster files on disk. To keep this notebook fast and reproducible without re-hitting PRISM's servers every time it is rendered, the download-and-processing code is shown below **commented out** (prefixed with `#`) purely for documentation and transparency. It has already been run once, and the results were cached to disk as `.rds` files (`ppt_pd.rds`, `tmean_pd.rds`, `ppt_raster.rds`, `tmean_raster.rds`). The active code that follows simply reloads those cached files. If you are re-running this pipeline from scratch, uncomment the relevant blocks.
+:::
+
+```{r, eval=FALSE}
+# --- STEP 1 (commented — already completed and cached): set the download folder ---
+# dir.create(prism_dir, showWarnings = FALSE, recursive = TRUE)
+# prism_set_dl_dir(prism_dir)
+
+# --- STEP 2 (commented — already completed and cached): download monthly PRISM data ---
+# This grabs one raster file per month, per variable, for 1940-2025 (~2,064 files total).
+# get_prism_monthlys(type = "ppt",   years = years_vec, mon = months_vec, keepZip = FALSE)
+# get_prism_monthlys(type = "tmean", years = years_vec, mon = months_vec, keepZip = FALSE)
+
+# --- STEP 3 (commented — already completed and cached): register the downloaded files ---
+# prism_archive_subset() scans the local PRISM folder and returns a lightweight
+# "file identifier" table (not the actual raster data yet) for the requested
+# variable/time window/resolution.
+# ppt_pd   <- prism_archive_subset("ppt",   "monthly", years = years_vec, mon = months_vec, resolution = "4km")
+# tmean_pd <- prism_archive_subset("tmean", "monthly", years = years_vec, mon = months_vec, resolution = "4km")
+
+# --- STEP 4 (commented — already completed and cached): cache those file identifiers ---
+# saveRDS(ppt_pd, "ppt_pd.rds")
+# saveRDS(tmean_pd, "tmean_pd.rds")
+```
+
+```{r, warning=FALSE}
+# --- ACTIVE CODE: reload the cached PRISM file identifiers ---
+ppt_pd   <- readRDS("ppt_pd.rds")
+tmean_pd <- readRDS("tmean_pd.rds")
+```
+
+### Step 2.1 — Clip PRISM to the Sand Hills and extract per-pixel values
+
+```{r, eval=FALSE}
+# --- COMMENTED (already completed and cached) ---
+# pd_stack() turns the PRISM file identifiers into an actual multi-layer raster
+# stack (one layer per month) covering the whole state of Nebraska.
+# ppt_stack   <- pd_stack(ppt_pd)
+# tmean_stack <- pd_stack(tmean_pd)
+
+# Convert to the newer `terra` SpatRaster format, which is faster for the
+# crop/mask/extract operations that follow.
+# ppt_stack1   <- rast(ppt_stack)
+# tmean_stack1 <- rast(tmean_stack)
+
+# Crop each stack down to the Sand Hills bounding box, then mask out every
+# pixel that falls outside the actual Sand Hills polygon (crop is fast but
+# keeps the rectangular bounding box; mask then removes the corners that
+# don't belong to the ecoregion).
+# ppt_crop <- crop(ppt_stack, poly_sp);  ppt_mask <- mask(ppt_crop, poly_sp)
+# tmean_crop <- crop(tmean_stack, poly_sp); tmean_mask <- mask(tmean_crop, poly_sp)
+
+# Convert each masked raster stack into a plain data frame with one row per
+# pixel and one column per month — this is the format used for all the
+# pixel-by-pixel trend and drought calculations below.
+# ppt.raster <- data.frame(rasterToPoints(ppt_mask))
+# tmean.raster <- data.frame(rasterToPoints(tmean_mask))
+# saveRDS(ppt.raster, "ppt_raster.rds")
+# saveRDS(tmean.raster, "tmean_raster.rds")
+```
+
+```{r, warning=FALSE}
+# --- ACTIVE CODE: reload the cached, already-clipped pixel-level climate tables ---
+ppt.raster   <- readRDS("ppt_raster.rds")
+tmean.raster <- readRDS("tmean_raster.rds")
+```
+
+### Step 2.2 — Reshape into a tidy "long" table and clean up known data gaps
+
+The raw tables have one column per year-month (a "wide" format, convenient for storage but awkward for analysis). The code below reshapes both variables into a "long" format (one row per pixel × month), merges precipitation and temperature into a single table, and handles two known data-quality issues in the PRISM record.
+
+```{r, warning=FALSE}
+# Reshape precipitation from wide (one column per month) to long
+# (one row per pixel-month), then parse the year and month out of the
+# column name and build a proper Date.
+ppt_long <- ppt.raster %>%
+  pivot_longer(cols = 3:1033,
+               names_to = "Year_Month",
+               values_to = "ppt_mm") %>%
+  mutate(Year_Month = str_extract(Year_Month, "\\d{6}$")) %>%   # pull the trailing YYYYMM digits
+  mutate(Year  = as.integer(substr(Year_Month, 1, 4)),
+         Month = as.integer(substr(Year_Month, 5, 6)),
+         date  = as.Date(sprintf("%04d-%02d-01", Year, Month)))
+
+# Do the same reshape for temperature
+tmean_long <- tmean.raster %>%
+  pivot_longer(cols = 3:1033,
+               names_to = "Year_Month",
+               values_to = "tmean") %>%
+  mutate(Year_Month = str_extract(Year_Month, "\\d{6}$")) %>%
+  mutate(Year  = as.integer(substr(Year_Month, 1, 4)),
+         Month = as.integer(substr(Year_Month, 5, 6)),
+         date  = as.Date(sprintf("%04d-%02d-01", Year, Month)))
+
+# Merge precipitation and temperature into one table, matched by pixel (x, y) and date
+climate_bind <- full_join(
+  ppt_long   %>% select(x, y, Year, Month, date, ppt_mm),
+  tmean_long %>% select(x, y, Year, Month, date, tmean)
+)
+
+# Data-quality issue #1: December 2025 has no temperature values, most likely
+# because PRISM's "provisional" data for the most recent month hadn't been
+# finalized/released yet at the time of download. We drop that one
+# incomplete month rather than analyze a partial record.
+climate_bind <- climate_bind %>%
+  filter(!(Year == 2025 & Month == 12))
+
+# Data-quality issue #2: December 2007 is missing for reasons that aren't
+# clear from the source data. Because this is a gap in the *middle* of the
+# time series (data exist on both sides — November 2007 and January 2008),
+# straight-line (linear) interpolation is a reasonable, low-risk way to fill
+# a single missing month without distorting the long-term record.
+library(zoo)
+climate_bind <- climate_bind %>%
+  arrange(x, y, date) %>%
+  group_by(x, y) %>%
+  mutate(
+    tmean  = na.approx(tmean,  x = date, na.rm = FALSE),
+    ppt_mm = na.approx(ppt_mm, x = date, na.rm = FALSE)
+  ) %>%
+  ungroup()
+```
+
+At this point, `climate_bind` is a clean, gap-free, pixel-level monthly climate record for the Sand Hills spanning January 1940 through November 2025 — the foundation for everything that follows.
+
+------------------------------------------------------------------------
+
+## Part 3 — A Drought Index That Combines Rainfall and Heat (SPEI)
+
+Rainfall totals alone don't fully capture drought risk, because a hotter atmosphere evaporates more water from soil and plants even when rainfall is unchanged. SPEI addresses this by computing a monthly **water balance** (precipitation minus potential evapotranspiration, or PET) and then standardizing that water balance against its own long-term distribution, separately at several timescales (1, 3, 6, and 12 months). A 12-month SPEI, for example, reflects water balance conditions accumulated over the trailing year — useful for characterizing longer, slow-building droughts rather than a single dry month.
+
+```{r, warning=FALSE}
+#| results: hide
+if (!requireNamespace("SPEI", quietly = TRUE)) install.packages("SPEI")
+
+library(SPEI)
+library(dplyr)
+library(tidyr)
+library(purrr)
+
+### The spei function produces a lot of messages so I am going ahead to comment everything out here. 
+
+# calc_spei_pixel(): computes PET, water balance, and multi-scale SPEI for
+# ONE pixel's monthly time series. This function gets applied to every pixel
+# in the Sand Hills separately, because both PET and SPEI depend on latitude
+# and on a pixel's own long-term climate distribution.
+# calc_spei_pixel <- function(df, lat, ref_start = c(1940, 1), ref_end = c(1970, 1)) {
+# 
+#   df <- df %>% arrange(date)   # SPEI/PET need a strictly chronological series
+# 
+#   # The Thornthwaite method estimates PET from mean temperature and latitude
+#   # (latitude sets day length, which affects how much energy is available
+#   # for evaporation across the year).
+#   tmean_ts <- ts(df$tmean, start = c(df$Year[1], df$Month[1]), frequency = 12)
+#   pet <- thornthwaite(tmean_ts, lat = lat)
+# 
+#   ppt_ts <- ts(df$ppt_mm, start = c(df$Year[1], df$Month[1]), frequency = 12)
+# 
+#   # The standard SPEI input: how much water arrived (ppt) minus how much
+#   # water the atmosphere "demanded" (PET). Negative = a water deficit month.
+#   wbal <- ppt_ts - pet
+# 
+#   # Compute SPEI at four accumulation windows: 1 month (very short-term),
+#   # 3 and 6 months (seasonal drought), and 12 months (long-term/hydrological drought).
+#   
+#   
+#   #spei1  <- suppressMessages(spei(wbal, scale = 1,  verbose = FALSE)$fitted)
+#   #spei3  <- suppressMessages(spei(wbal, scale = 3,  verbose = FALSE)$fitted)
+#   #spei6  <- suppressMessages(spei(wbal, scale = 6,  verbose = FALSE)$fitted)
+#   #spei12 <- suppressMessages(spei(wbal, scale = 12, verbose = FALSE)$fitted)
+# 
+#   df %>%
+#     mutate(
+#       pet    = as.numeric(pet),
+#       wbal   = as.numeric(wbal),
+#       spei1  = as.numeric(spei1),
+#       spei3  = as.numeric(spei3),
+#       spei6  = as.numeric(spei6),
+#       spei12 = as.numeric(spei12)
+#     )
+# }
+# 
+# # Apply the function pixel-by-pixel across the whole Sand Hills grid.
+# # `nest()` groups the long table into one small data frame per (x, y) pixel;
+# # `map2()` then runs calc_spei_pixel() once per pixel, passing that pixel's
+# # own y-coordinate in as its latitude; `unnest()` flattens the results back
+# # into one long table.
+# spei_results <- climate_bind %>%
+#   group_by(x, y) %>%
+#   nest() %>%
+#   mutate(result = map2(data, y, ~ calc_spei_pixel(.x, lat = .y))) %>%
+#   select(-data) %>%
+#   unnest(result) %>%
+#   ungroup()
+
+#write.csv(spei_results, "spei_results.csv")
+```
+
+`spei_results` now holds, for every Sand Hills pixel and every month since 1940, an estimate of potential evapotranspiration, the water balance, and SPEI at four timescales. This table powers the drought maps in Part 6.
+
+------------------------------------------------------------------------
+
+## Part 4 — Has It Been Getting Warmer? Seasonal Temperature Trends
+
+To ask "has it warmed" in a way that's statistically defensible (rather than eyeballing a noisy year-to-year line), this section:
+
+1.  Averages temperature spatially across the whole Sand Hills for every month, producing one regional monthly time series.
+2.  Aggregates that monthly series into six seasonal/annual definitions (Winter, Spring, Summer, Fall, the May–September growing season, and the October–April non-growing season).
+3.  Fits a **Sen's slope** trend line to each season's yearly values and tests significance with the **Mann-Kendall test**.
+
+```{r, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(purrr)
+library(trend)
+
+# ---- 1. Collapse the pixel grid into one regional-average monthly series ----
+regional_tmean <- climate_bind %>%
+  group_by(Year, Month) %>%
+  summarise(tmean = mean(tmean, na.rm = TRUE), .groups = "drop")
+
+# ---- 2. Define each season. `wrap = TRUE` marks seasons that cross the
+#          Dec/Jan calendar-year boundary (e.g., Winter = Dec-Jan-Feb), so a
+#          December value gets assigned to the FOLLOWING winter's year label
+#          rather than splitting one winter across two calendar years. ----
+season_defs <- list(
+  Winter            = list(months = c(12, 1, 2),               wrap = TRUE),
+  Spring            = list(months = c(3, 4, 5),                wrap = FALSE),
+  Summer            = list(months = c(6, 7, 8),                wrap = FALSE),
+  Fall              = list(months = c(9, 10, 11),               wrap = FALSE),
+  Growing.season    = list(months = c(5, 6, 7, 8, 9),          wrap = FALSE),  # May-Sep
+  NonGrowing.season = list(months = c(10, 11, 12, 1, 2, 3, 4), wrap = TRUE)    # Oct-Apr
+)
+season_levels <- names(season_defs)
+
+# ---- 3. Helper: collapse monthly values into one value per season-year ----
+compute_seasonal_annual <- function(data, value_col, months, wrap, agg = "mean") {
+  d <- data %>%
+    select(Year, Month, value = all_of(value_col)) %>%
+    filter(Month %in% months)
+
+  if (wrap) {
+    late_months <- months[months > 6]
+    d <- d %>% mutate(season_year = if_else(Month %in% late_months, Year + 1L, Year))
+  } else {
+    d <- d %>% mutate(season_year = Year)
+  }
+
+  d %>%
+    group_by(season_year) %>%
+    summarise(n_months = n(),
+              value = if (agg == "sum") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE),
+              .groups = "drop") %>%
+    filter(n_months == length(months)) %>%   # drop partial seasons at either end of the record
+    rename(Year = season_year)
+}
+
+# ---- 4. Build one long table with an annual value for every season ----
+variables1 <- list(tmean = list(col = "tmean", label = "Temperature", units = "\u00b0C", agg = "mean"))
+
+annual_tmean <- purrr::map_dfr(names(season_defs), function(season_name) {
+  sd <- season_defs[[season_name]]
+  purrr::map_dfr(names(variables1), function(var_name) {
+    vd <- variables1[[var_name]]
+    compute_seasonal_annual(regional_tmean, vd$col, sd$months, sd$wrap, agg = vd$agg) %>%
+      mutate(Season = season_name, Variable = var_name)
+  })
+}) %>%
+  mutate(Season = factor(Season, levels = season_levels))
+
+# ---- 5. Fit Sen's slope + Mann-Kendall p-value, one trend per season ----
+sens_results1 <- annual_tmean %>%
+  group_by(Season) %>%
+  group_modify(~{
+    x <- .x %>% arrange(Year) %>% pull(value)
+    ss <- trend::sens.slope(x)   # Sen's slope estimator (robust to outliers)
+    data.frame(
+      slope        = unname(ss$estimates),   # deg C per year
+      p_value      = ss$p.value,              # Mann-Kendall significance test
+      median_year  = median(.x$Year),
+      median_value = median(x),
+      min_year     = min(.x$Year),
+      max_year     = max(.x$Year)
+    )
+  }) %>%
+  ungroup()
+
+# ---- 6. Build the fitted trend line (a straight line through the median
+#          point, with slope = Sen's slope) for plotting ----
+sens_line1 <- sens_results1 %>%
+  rowwise() %>%
+  mutate(data = list(tibble(
+    Year  = c(min_year, max_year),
+    value = median_value + slope * (c(min_year, max_year) - median_year)
+  ))) %>%
+  ungroup() %>%
+  select(Season, data) %>%
+  tidyr::unnest(data)
+
+# ---- 7. Build an annotation label (slope + p-value) for each panel ----
+sens_labels1 <- sens_results1 %>%
+  mutate(
+    p_fmt = ifelse(p_value < 0.001, "< 0.001", sprintf("%.3f", p_value)),
+    label = paste0("Sen's slope = ", sprintf("%.3f", slope), " \u00b0C/yr\n",
+                   "MK p = ", p_fmt)
+  )
+```
+
+```{r, warning=FALSE, fig.width=12, fig.height=14, fig.cap="Seasonal temperature trends, 1940-2025. Each panel shows the regionally-averaged Sand Hills temperature for one season each year (black points), with a Sen's-slope trend line (red) and its slope and Mann-Kendall significance annotated."}
+var_label1 <- variables1$tmean$label
+y_units1   <- variables1$tmean$units
+
+ggplot() +
+  geom_line(data = annual_tmean, aes(x = Year, y = value), color = "grey40", linewidth = 0.3) +
+  geom_point(data = annual_tmean, aes(x = Year, y = value), color = "black", size = 1.5) +
+  geom_line(data = sens_line1, aes(x = Year, y = value), color = "red", linewidth = 0.9) +
+  geom_text(data = sens_labels1,
+            aes(x = -Inf, y = Inf, label = label),
+            hjust = -0.05, vjust = 1.3, size = 3.6, color = "red", fontface = "bold") +
+  facet_wrap(~ Season, scales = "free_y", ncol = 2) +
+  labs(x = "Year", y = paste0(var_label1, " (", y_units1, ")")) +
+  theme_bw(base_size = 15) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.minor = element_blank(),
+        strip.background = element_rect(fill = "grey90"))
+```
+
+**In the figure above,** each panel is one season. The black dots are the annual seasonal values; the red line is the Sen's-slope trend fit through those points; and the red text in the upper-left of each panel reports the estimated warming rate (°C per year) and the Mann-Kendall p-value that tests whether that trend is statistically significant. A season with a p-value below 0.05 has a trend unlikely to be due to chance; a season with a larger p-value has a trend too weak, relative to its year-to-year variability. In general, there is no significant trend (change) in seasonal temperature over the period 1940-2025. Growing season = May - September; Non-Growing season: October - April.
+
+------------------------------------------------------------------------
+
+## Part 5 — Has It Been Getting Wetter or Drier? Seasonal Precipitation Trends
+
+The same Sen's-slope / Mann-Kendall approach is repeated here for precipitation, using seasonal *totals* (sum of monthly rainfall) rather than seasonal *averages*, since it makes more physical sense to talk about "how much rain fell this season" than "the average monthly rainfall rate."
+
+```{r, warning=FALSE}
+library(dplyr)
+library(purrr)
+library(ggplot2)
+library(trend)
+
+# ---- 1. Regional-average monthly precipitation series ----
+regional_ppt <- climate_bind %>%
+  group_by(Year, Month) %>%
+  summarise(ppt_mm = mean(ppt_mm, na.rm = TRUE), .groups = "drop")
+
+# ---- 2. Same season definitions as Part 4 ----
+season_defs <- list(
+  Winter     = list(months = c(12, 1, 2),               wrap = TRUE),
+  Spring     = list(months = c(3, 4, 5),                 wrap = FALSE),
+  Summer     = list(months = c(6, 7, 8),                 wrap = FALSE),
+  Fall       = list(months = c(9, 10, 11),                wrap = FALSE),
+  Growing    = list(months = c(5, 6, 7, 8, 9),           wrap = FALSE),  # May-Sep
+  NonGrowing = list(months = c(10, 11, 12, 1, 2, 3, 4),  wrap = TRUE)    # Oct-Apr
+)
+season_levels <- names(season_defs)
+
+# ---- 3. Same seasonal-aggregation helper as Part 4 ----
+compute_seasonal_annual <- function(data, value_col, months, wrap, agg = "mean") {
+  d <- data %>%
+    select(Year, Month, value = all_of(value_col)) %>%
+    filter(Month %in% months)
+
+  if (wrap) {
+    late_months <- months[months > 6]
+    d <- d %>% mutate(season_year = if_else(Month %in% late_months, Year + 1L, Year))
+  } else {
+    d <- d %>% mutate(season_year = Year)
+  }
+
+  d %>%
+    group_by(season_year) %>%
+    summarise(n_months = n(),
+              value = if (agg == "sum") sum(value, na.rm = TRUE) else mean(value, na.rm = TRUE),
+              .groups = "drop") %>%
+    filter(n_months == length(months)) %>%
+    rename(Year = season_year)
+}
+
+# ---- 4. Build the long annual precipitation table (using SUM, not mean) ----
+variables <- list(ppt_mm = list(col = "ppt_mm", label = "Precipitation", units = "mm", agg = "sum"))
+
+annual_ppt <- purrr::map_dfr(names(season_defs), function(season_name) {
+  sd <- season_defs[[season_name]]
+  purrr::map_dfr(names(variables), function(var_name) {
+    vd <- variables[[var_name]]
+    compute_seasonal_annual(regional_ppt, vd$col, sd$months, sd$wrap, agg = vd$agg) %>%
+      mutate(Season = season_name, Variable = var_name)
+  })
+}) %>%
+  mutate(Season = factor(Season, levels = season_levels))
+
+# ---- 5. Sen's slope + Mann-Kendall per season ----
+sens_results <- annual_ppt %>%
+  group_by(Season) %>%
+  group_modify(~{
+    x <- .x %>% arrange(Year) %>% pull(value)
+    ss <- trend::sens.slope(x)
+    data.frame(
+      slope        = unname(ss$estimates),   # mm per year
+      p_value      = ss$p.value,
+      median_year  = median(.x$Year),
+      median_value = median(x),
+      min_year     = min(.x$Year),
+      max_year     = max(.x$Year)
+    )
+  }) %>%
+  ungroup()
+
+# ---- 6. Trend line through the medians ----
+sens_line <- sens_results %>%
+  rowwise() %>%
+  mutate(data = list(tibble(
+    Year  = c(min_year, max_year),
+    value = median_value + slope * (c(min_year, max_year) - median_year)
+  ))) %>%
+  ungroup() %>%
+  select(Season, data) %>%
+  tidyr::unnest(data)
+
+# ---- 7. Annotation labels ----
+sens_labels <- sens_results %>%
+  mutate(
+    p_fmt = ifelse(p_value < 0.001, "< 0.001", sprintf("%.3f", p_value)),
+    label = paste0("Sen's slope = ", sprintf("%.3f", slope), " mm/yr\n",
+                   "MK p = ", p_fmt)
+  )
+
+# annual_all.csv is the cached version of annual_ppt used for the final plot,
+# saved once with `write.csv(annual_ppt, "annual_all.csv")`
+annual_all <- read.csv("annual_all.csv")
+```
+
+```{r, warning=FALSE, fig.width=12, fig.height=14, fig.cap="Seasonal precipitation trends, 1940-2025. Each panel shows regional total precipitation for one season each year (black points), with a Sen's-slope trend line (red) and its slope and Mann-Kendall significance annotated."}
+var_label <- variables$ppt_mm$label
+y_units   <- variables$ppt_mm$units
+
+ggplot() +
+  geom_line(data = annual_all, aes(x = Year, y = value), color = "grey40", linewidth = 0.3) +
+  geom_point(data = annual_all, aes(x = Year, y = value), color = "black", size = 1.5) +
+  geom_line(data = sens_line, aes(x = Year, y = value), color = "red", linewidth = 0.9) +
+  geom_text(data = sens_labels,
+            aes(x = -Inf, y = Inf, label = label),
+            hjust = -0.05, vjust = 1.3, size = 3.6, color = "red", fontface = "bold") +
+  facet_wrap(~ Season, scales = "free_y", ncol = 2) +
+  labs(x = "Year", y = paste0(var_label, " (", y_units, ")")) +
+  theme_bw(base_size = 15) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.minor = element_blank(),
+        strip.background = element_rect(fill = "grey90"))
+```
+
+**In the figure above,** each panel is one season. The black dots are the annual seasonal values; the red line is the Sen's-slope trend fit through those points; and the red text in the upper-left of each panel reports the estimated precipitation rate (mm year) and the Mann-Kendall p-value that tests whether that trend is statistically significant. A season with a p-value below 0.05 has a trend unlikely to be due to chance; a season with a larger p-value has a trend too weak, relative to its year-to-year variability. Growing season = May - September; Non-Growing season: October - April. In general, there is a significant increase in precipitation for Spring, Growing, and Non Growing seasons, over the period 1940-2025.
+
+------------------------------------------------------------------------
+
+## Part 6 — Mapping Drought Across Three Climate "Generations" (1941–2025)
+
+Rather than looking at one regional-average number, this section maps the **spatial pattern** of long-term drought conditions (12-month SPEI) across the Sand Hills, and asks whether that pattern has shifted across three successive \~30-year climate periods: 1941–1970, 1971–2000, and 2001–2025. Thirty years is the conventional length of a "climate normal" period, so comparing three of them is a standard way to describe a long-term climatic shift.
+
+```{r, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(terra)
+
+spei_results <- read.csv("/Users/johnmensah/Documents/ESIIL/SandHills/spei_results.csv")
+
+# 0) Keep only the columns needed for this mapping step
+df <- spei_results[, c("x", "y", "Year", "Month", "spei12")]
+
+crs_string <- "EPSG:9822"   # the coordinate reference system of the PRISM/SPEI grid
+
+# 1) Collapse monthly SPEI12 down to one annual value per pixel
+df_annual <- df %>%
+  group_by(x, y, Year) %>%
+  summarise(spei12_annual = mean(spei12, na.rm = TRUE), .groups = "drop")
+
+# 2) Assign each year to one of three 30-year "climate generations"
+df_annual <- df_annual %>%
+  mutate(period = case_when(
+    Year >= 1941 & Year <= 1970 ~ "1941_1970",
+    Year >= 1971 & Year <= 2000 ~ "1971_2000",
+    Year >= 2001 & Year <= 2025 ~ "2001_2025",
+    TRUE ~ NA_character_
+  )) %>%
+  filter(!is.na(period))
+
+# 3) Average SPEI12 within each period, per pixel — this collapses ~30 years
+#    of monthly detail into a single "typical drought status" value per pixel
+#    per period
+df_period <- df_annual %>%
+  group_by(x, y, period) %>%
+  summarise(spei12_mean = mean(spei12_annual, na.rm = TRUE), .groups = "drop")
+
+# 4) Pivot so each row is one pixel and each period becomes its own column
+df_wide <- df_period %>%
+  pivot_wider(names_from = period, values_from = spei12_mean, names_prefix = "spei_")
+
+# 5) Sanity-check that the pixel grid is regular (evenly spaced) before
+#    trying to convert it back into a raster
+ux <- sort(unique(df_wide$x)); dx <- diff(ux)
+uy <- sort(unique(df_wide$y)); dy <- diff(uy)
+cat("x resolution approx:", median(dx), " ; y resolution approx:", median(dy), "\n")
+
+# 6) Rebuild a proper multi-layer raster (one layer per period) from the
+#    pixel table
+xyz <- df_wide[, c("x", "y", grep("^spei_", names(df_wide), value = TRUE))]
+r <- rast(xyz, type = "xyz")
+crs(r) <- crs_string
+names(r) <- sub("^spei_", "", names(r))
+print(r)
+
+# Use one shared color scale across all three periods so the maps are
+# directly, visually comparable to each other
+global_min <- min(minmax(r)[1, ])
+global_max <- max(minmax(r)[2, ])
+cat("Shared range:", global_min, "to", global_max, "\n")
+```
+
+```{r, warning=FALSE, fig.cap="Mean 12-month SPEI by pixel, averaged within each ~30-year climate period. Blue = wetter than the record average; red = drier."}
+plot(r, range = c(global_min, global_max),
+     col = colorRampPalette(c("firebrick", "white", "steelblue"))(100))
+```
+
+The figure above demonstrate that, the Nebraska Sandhills is wetter in recent years compared to 1941-1970.
+
+```{r, warning=FALSE}
+# 7) Compute period-to-period differences to isolate WHERE and BY HOW MUCH
+#    conditions shifted, rather than just looking at three separate maps
+diff_1971_1941 <- r[["1971_2000"]] - r[["1941_1970"]]
+diff_2001_1971 <- r[["2001_2025"]] - r[["1971_2000"]]
+diff_full      <- r[["2001_2025"]] - r[["1941_1970"]]   # full-span change
+
+names(diff_1971_1941) <- "1971-2000 minus 1941-1970"
+names(diff_2001_1971) <- "2001-2025 minus 1971-2000"
+names(diff_full)      <- "2001-2025 minus 1941-1970"
+
+diff_stack <- c(diff_1971_1941, diff_2001_1971, diff_full)
+```
+
+```{r, warning=FALSE, fig.cap="Change in mean 12-month SPEI between successive climate periods. Blue = became wetter; red = became drier."}
+plot(diff_stack, col = colorRampPalette(c("firebrick", "white", "steelblue"))(100))
+```
+
+**Interpreting the actual numbers:** the printed raster summary above shows the SPEI12 period-average range shifting from **–0.46 to +0.19** in 1941–1970, to **–0.29 to +0.30** in 1971–2000, to **–0.16 to +0.59** in 2001–2025. In other words, across all three periods the *lowest* period-average SPEI value has been getting less negative (drought conditions less extreme in their worst pixels) and the *highest* period-average value has been getting more positive (wet conditions more pronounced in their best pixels). Because SPEI is standardized to have a long-run mean of zero, a 30-year period whose average sits above zero is, on balance, wetter than the multi-decade norm; a period below zero is, on balance, drier. Read together, this progression is consistent with a gradual **wetting trend** across the Sand Hills SPEI12 record over the past 85 years — though it says nothing on its own about whether any individual pixel's shift is statistically significant. The difference maps make this spatially explicit: they show precisely which parts of the Sand Hills became wetter or drier between each pair of periods, rather than relying on one basin-wide number.
+
+------------------------------------------------------------------------
+
+## Part 7 — Looking Ahead: Building a Future Climate Projection
+
+The next several sections shift from "what has already happened" to "what a climate model projects for the future." We already have an 86-year historical PRISM record for the Sand Hills. To compare that against a plausible future, three things are needed, in order:
+
+1.  Download a future climate projection from one global climate model (GCM), downscaled by LOCA2.
+2.  Clip that projection to the Sand Hills polygon, exactly as was done for PRISM.
+3.  **Bias-correct** it against the PRISM historical baseline, so both series are on the same numerical footing.
+
+This analysis uses **ACCESS-CM2** (one GCM among the dozens used in the IPCC's CMIP6 archive) as an illustrative single-model example, under two emissions scenarios: the moderate SSP2-4.5 pathway and the high SSP5-8.5 pathway.
+
+### Step 7.1 — Test the download pipeline with one file
+
+```{r, warning=FALSE}
+library(sf)
+exists("poly_sf")
+nrow(poly_sf)
+poly_sf$US_L3NAME
+```
+
+::: callout-important
+## Why the download code below is commented out
+
+Each LOCA2 monthly NetCDF file covers the entire CONUS domain at 6-km resolution for a 30- or 65-year period, and is on the order of hundreds of megabytes. Downloading even the small set of historical and future files needed here (tasmax and tasmin, for two scenarios, plus one shared historical run) takes **roughly 10 minutes** over a typical connection. To avoid re-downloading multi-hundred-megabyte files every time this notebook is rendered, the `download.file()` calls below are commented out; the files were downloaded once and are read directly from the local `loca2_downloads/` folder in the code that follows.
+:::
+
+```{r, eval=FALSE}
+# dir.create("loca2_downloads", showWarnings = FALSE)
+#
+# url <- "https://cirrus.ucsd.edu/~pierce/LOCA2/NAmer/ACCESS-CM2/0p0625deg/r1i1p1f1/ssp245/tasmax/tasmax.ACCESS-CM2.ssp245.r1i1p1f1.2045-2074.LOCA_16thdeg_v20220413.monthly.nc"
+#
+# download.file(url, destfile = "loca2_downloads/test_tasmax.nc", mode = "wb")
+```
+
+```{r, warning=FALSE, fig.cap="Raw ACCESS-CM2 SSP2-4.5 tasmax (Kelvin), first monthly layer, full CONUS domain before clipping."}
+library(terra)
+r <- rast("/Users/johnmensah/Documents/ESIIL/SandHills/loca2_downloads/test_tasmax.nc")
+r
+plot(r[[1]])
+```
+
+**Reading the metadata:** the file contains 360 monthly layers (30 years × 12 months, 2045–2074), at 0.0625° (\~6-km) resolution, in units of Kelvin — everything downstream needs to convert this to °C for comparison with PRISM.
+
+### Step 7.2 — Clip the projection to the Sand Hills
+
+LOCA2's longitude convention runs 0°–360° (common in global climate models) instead of the usual –180°–180°, so the raster needs to be "rotated" onto the standard convention before it will overlay correctly with the Sand Hills polygon.
+
+```{r, warning=FALSE}
+library(sf)
+library(terra)
+
+#poly_v <- vect(poly_sf) |> project(crs(r))
+poly_sf_ll <- ne_eco[ne_eco$US_L3NAME == "Nebraska Sand Hills", ] |>
+  st_transform(crs = 4326)
+
+poly_v <- vect(poly_sf_ll)
+r <- rotate(r)              # convert longitude from 0-360 to -180-180
+ext(r)                        # should now read roughly -125 to -66 (CONUS)
+
+r_sandhills <- crop(r, poly_v) |> mask(poly_v)
+```
+
+```{r, warning=FALSE, fig.cap="ACCESS-CM2 SSP2-4.5 tasmax clipped to the Nebraska Sand Hills."}
+plot(r_sandhills[[1]], main = "ACCESS-CM2 tasmax, SSP2-4.5, Sand Hills")
+```
+
+```{r, warning=FALSE}
+# Extract a single spatial-average value per month, exactly the same
+# operation used earlier to build the PRISM regional time series
+future_tmax <- extract(r_sandhills, poly_v, fun = mean, na.rm = TRUE, ID = FALSE)
+```
+
+### Step 7.3 — Download the model's own historical run, for bias correction
+
+```{r, eval=FALSE}
+# url_hist <- "https://cirrus.ucsd.edu/~pierce/LOCA2/NAmer/ACCESS-CM2/0p0625deg/r1i1p1f1/historical/tasmax/tasmax.ACCESS-CM2.historical.r1i1p1f1.1950-2014.LOCA_16thdeg_v20220413.monthly.nc"
+#
+# options(timeout = 600)  # the default 60-second timeout is too short for a file this size
+# download.file(url_hist, destfile = "loca2_downloads/hist_tasmax.nc", mode = "wb")
+```
+
+```{r, warning=FALSE}
+library(terra)
+r_hist <- rast("/Users/johnmensah/Documents/ESIIL/SandHills/loca2_downloads/hist_tasmax.nc") |> rotate()
+r_hist_sandhills <- crop(r_hist, poly_v) |> mask(poly_v)
+hist_tmax <- extract(r_hist_sandhills, poly_v, fun = mean, na.rm = TRUE, ID = FALSE)
+
+dim(hist_tmax)                        # expect 1 x 780 (65 years x 12 months, 1950-2014)
+names(r_hist_sandhills)[1:5]          # check the date-labeling format
+```
+
+### Step 7.4 — Build tidy, date-labeled tables and attempt a first bias correction
+
+```{r, warning=FALSE}
+library(dplyr)
+
+hist_dates <- seq(as.Date("1950-01-01"), as.Date("2014-12-01"), by = "month")
+hist_df <- data.frame(
+  date  = hist_dates,
+  year  = as.integer(format(hist_dates, "%Y")),
+  month = as.integer(format(hist_dates, "%m")),
+  tmax_hist_loca = as.numeric(hist_tmax[1, ]) - 273.15   # Kelvin -> Celsius
+)
+
+future_dates <- seq(as.Date("2045-01-01"), as.Date("2074-12-01"), by = "month")
+future_df <- data.frame(
+  date  = future_dates,
+  year  = as.integer(format(future_dates, "%Y")),
+  month = as.integer(format(future_dates, "%m")),
+  tmax_future_loca = as.numeric(future_tmax[1, ]) - 273.15
+)
+
+library(readr)
+climate_long <- read_csv("Sandhills.Weather_1940_2025.csv")
+
+sandhills_climate <- climate_long |>
+  mutate(
+    year  = as.integer(format(date, "%Y")),
+    month = as.integer(format(date, "%m")),
+    tmean = tmean_C,
+    ppt   = ppt_mm
+  )
+
+# Compute each calendar month's average bias: the model's own historical
+# simulation minus what PRISM actually observed, over the same 1950-2014 window
+prism_hist <- sandhills_climate |>
+  filter(year >= 1950, year <= 2014) |>
+  group_by(month) |>
+  summarise(prism_mean = mean(tmean, na.rm = TRUE))
+
+loca_hist_monthly <- hist_df |>
+  group_by(month) |>
+  summarise(loca_hist_mean = mean(tmax_hist_loca, na.rm = TRUE))
+
+bias_by_month <- left_join(prism_hist, loca_hist_monthly, by = "month") |>
+  mutate(bias_correction = prism_mean - loca_hist_mean)
+
+bias_by_month
+```
+
+::: callout-warning
+## Catching a real methodological mistake
+
+This first attempt compares PRISM's **mean** temperature (`tmean`) to the model's **maximum** temperature (`tasmax`) — two genuinely different physical quantities, not two versions of the same one. The result is a monthly "bias correction" of roughly **–6.6°C to –7.6°C**, which is far too large to be a sensible bias correction; it is mostly just the average gap between a day's high temperature and its daily mean. Comparing `tasmax` against `tmean` like this would silently bake a several-degree error into every future projection. The fix, carried out in the next section, is to build a proper `tmean` for the LOCA2 model too — by averaging its `tasmax` and `tasmin` — and compare that apples-to-apples against PRISM's `tmean`.
+:::
+
+------------------------------------------------------------------------
+
+## Part 8 — Fixing the Bias Correction: Adding Minimum Temperature
+
+To build a correct, comparable model-derived `tmean`, the model's minimum temperature (`tasmin`) is downloaded and averaged together with the `tasmax` already retrieved above ($T_{mean} \approx (T_{max} + T_{min}) / 2$, the standard meteorological approximation).
+
+```{r, eval=FALSE}
+# dir.create("loca2_downloads", showWarnings = FALSE)
+#
+# url_tasmin_hist <- "https://cirrus.ucsd.edu/~pierce/LOCA2/NAmer/ACCESS-CM2/0p0625deg/r1i1p1f1/historical/tasmin/tasmin.ACCESS-CM2.historical.r1i1p1f1.1950-2014.LOCA_16thdeg_v20220413.monthly.nc"
+# download.file(url_tasmin_hist, destfile = "loca2_downloads/hist_tasmin.nc", mode = "wb")
+#
+# url_tasmin_future <- "https://cirrus.ucsd.edu/~pierce/LOCA2/NAmer/ACCESS-CM2/0p0625deg/r1i1p1f1/ssp245/tasmin/tasmin.ACCESS-CM2.ssp245.r1i1p1f1.2045-2074.LOCA_16thdeg_v20220413.monthly.nc"
+# download.file(url_tasmin_future, destfile = "loca2_downloads/future_tasmin.nc", mode = "wb")
+```
+
+```{r, warning=FALSE}
+library(terra)
+library(dplyr)
+options(timeout = 600)
+
+# Load, rotate to standard longitude, then crop/mask to the Sand Hills —
+# identical steps to those used for tasmax above
+r_hist_tasmin    <- rast("/Users/johnmensah/Documents/ESIIL/SandHills/loca2_downloads/hist_tasmin.nc") |> rotate()
+r_future_tasmin  <- rast("/Users/johnmensah/Documents/ESIIL/SandHills/loca2_downloads/future_tasmin.nc") |> rotate()
+
+r_hist_tasmin_sandhills   <- crop(r_hist_tasmin, poly_v)   |> mask(poly_v)
+r_future_tasmin_sandhills <- crop(r_future_tasmin, poly_v) |> mask(poly_v)
+
+hist_tasmin_extract   <- extract(r_hist_tasmin_sandhills,   poly_v, fun = mean, na.rm = TRUE, ID = FALSE)
+future_tasmin_extract <- extract(r_future_tasmin_sandhills, poly_v, fun = mean, na.rm = TRUE, ID = FALSE)
+
+# Build tidy date-labeled tables, Kelvin -> Celsius
+hist_tasmin_df <- data.frame(
+  date  = hist_dates, year = as.integer(format(hist_dates, "%Y")), month = as.integer(format(hist_dates, "%m")),
+  tmin_hist_loca = as.numeric(hist_tasmin_extract[1, ]) - 273.15
+)
+future_tasmin_df <- data.frame(
+  date  = future_dates, year = as.integer(format(future_dates, "%Y")), month = as.integer(format(future_dates, "%m")),
+  tmin_future_loca = as.numeric(future_tasmin_extract[1, ]) - 273.15
+)
+
+# Combine with the tasmax tables from Part 7 and derive tmean = (tasmax + tasmin) / 2
+hist_combined <- hist_df |>
+  left_join(hist_tasmin_df |> select(date, tmin_hist_loca), by = "date") |>
+  mutate(tmean_hist_loca = (tmax_hist_loca + tmin_hist_loca) / 2)
+
+future_combined <- future_df |>
+  left_join(future_tasmin_df |> select(date, tmin_future_loca), by = "date") |>
+  mutate(tmean_future_loca = (tmax_future_loca + tmin_future_loca) / 2)
+
+# Redo the bias correction, now comparing tmean to tmean
+prism_hist <- sandhills_climate |>
+  filter(year >= 1950, year <= 2014) |>
+  group_by(month) |>
+  summarise(prism_mean = mean(tmean, na.rm = TRUE))
+
+loca_hist_monthly <- hist_combined |>
+  group_by(month) |>
+  summarise(loca_hist_mean = mean(tmean_hist_loca, na.rm = TRUE))
+
+bias_by_month <- left_join(prism_hist, loca_hist_monthly, by = "month") |>
+  mutate(bias_correction = prism_mean - loca_hist_mean)
+
+bias_by_month
+
+future_corrected <- future_combined |>
+  left_join(bias_by_month |> select(month, bias_correction), by = "month") |>
+  mutate(tmean_future_corrected = tmean_future_loca + bias_correction)
+```
+
+::: callout-tip
+## Sanity check passed
+
+With `tmean` compared to `tmean`, the monthly bias corrections shrink to roughly **–0.01°C to +0.33°C** — a small, physically sensible adjustment, rather than the spurious 6–8°C offset from the flawed first attempt in Part 7. This is the expected size of a bias correction for a modern, well-calibrated downscaled GCM product, and confirms the pipeline is now comparing like with like.
+:::
+
+```{r, warning=FALSE, fig.cap="Monthly mean temperature: PRISM historical observations (1950-2014) vs. bias-corrected ACCESS-CM2 SSP2-4.5 projection (2045-2074)."}
+library(ggplot2)
+
+hist_monthly_avg <- sandhills_climate |>
+  filter(year >= 1950, year <= 2014) |>
+  group_by(month) |>
+  summarise(tmean = mean(tmean, na.rm = TRUE)) |>
+  mutate(period = "PRISM historical (1950-2014)")
+
+future_monthly_avg <- future_corrected |>
+  group_by(month) |>
+  summarise(tmean = mean(tmean_future_corrected, na.rm = TRUE)) |>
+  mutate(period = "LOCA2 SSP2-4.5 (2045-2074, bias-corrected)")
+
+bind_rows(hist_monthly_avg, future_monthly_avg) |>
+  ggplot(aes(x = month, y = tmean, color = period)) +
+  geom_line(linewidth = 1) +
+  geom_point() +
+  scale_x_continuous(breaks = 1:12) +
+  labs(title = "Sand Hills Monthly Mean Temperature: Historical vs. Projected Mid-Century",
+       y = "Mean Temperature (\u00b0C)", x = "Month", color = NULL) +
+  theme_minimal()
+```
+
+Every month of the projected mid-century (2045–2074) climate sits above the corresponding historical month, consistent with the well-established physical expectation of continued regional warming under a moderate-emissions pathway.
+
+------------------------------------------------------------------------
+
+## Part 9 — Adding the High-Emissions Scenario (SSP5-8.5)
+
+The same download → clip → extract → bias-correct pipeline is repeated for the SSP5-8.5 ("high emissions") scenario, reusing the shared historical run and bias-correction table computed above, so that SSP2-4.5 and SSP5-8.5 can be compared on equal footing.
+
+```{r, eval=FALSE}
+# url_tasmax_585 <- "https://cirrus.ucsd.edu/~pierce/LOCA2/NAmer/ACCESS-CM2/0p0625deg/r1i1p1f1/ssp585/tasmax/tasmax.ACCESS-CM2.ssp585.r1i1p1f1.2045-2074.LOCA_16thdeg_v20220413.monthly.nc"
+# url_tasmin_585 <- "https://cirrus.ucsd.edu/~pierce/LOCA2/NAmer/ACCESS-CM2/0p0625deg/r1i1p1f1/ssp585/tasmin/tasmin.ACCESS-CM2.ssp585.r1i1p1f1.2045-2074.LOCA_16thdeg_v20220413.monthly.nc"
+#
+# download.file(url_tasmax_585, destfile = "loca2_downloads/future_tasmax_585.nc", mode = "wb")
+# download.file(url_tasmin_585, destfile = "loca2_downloads/future_tasmin_585.nc", mode = "wb")
+```
+
+```{r, warning=FALSE}
+library(terra)
+options(timeout = 600)
+dir.create("loca2_downloads", showWarnings = FALSE)
+
+r_future_tasmax_585 <- rast("/Users/johnmensah/Documents/ESIIL/SandHills/loca2_downloads/future_tasmax_585.nc") |> rotate()
+r_future_tasmin_585 <- rast("/Users/johnmensah/Documents/ESIIL/SandHills/loca2_downloads/future_tasmin_585.nc") |> rotate()
+
+r_future_tasmax_585_sandhills <- crop(r_future_tasmax_585, poly_v) |> mask(poly_v)
+r_future_tasmin_585_sandhills <- crop(r_future_tasmin_585, poly_v) |> mask(poly_v)
+
+future_tasmax_585_extract <- extract(r_future_tasmax_585_sandhills, poly_v, fun = mean, na.rm = TRUE, ID = FALSE)
+future_tasmin_585_extract <- extract(r_future_tasmin_585_sandhills, poly_v, fun = mean, na.rm = TRUE, ID = FALSE)
+
+future_tasmax_585_df <- data.frame(
+  date = future_dates, year = as.integer(format(future_dates, "%Y")), month = as.integer(format(future_dates, "%m")),
+  tmax_future_585_loca = as.numeric(future_tasmax_585_extract[1, ]) - 273.15
+)
+future_tasmin_585_df <- data.frame(
+  date = future_dates, year = as.integer(format(future_dates, "%Y")), month = as.integer(format(future_dates, "%m")),
+  tmin_future_585_loca = as.numeric(future_tasmin_585_extract[1, ]) - 273.15
+)
+
+future_combined_585 <- future_tasmax_585_df |>
+  left_join(future_tasmin_585_df |> select(date, tmin_future_585_loca), by = "date") |>
+  mutate(tmean_future_585_loca = (tmax_future_585_loca + tmin_future_585_loca) / 2)
+
+# Reuse the same bias-correction table computed in Part 8 (the shared
+# historical run is identical between scenarios — only the future period differs)
+future_corrected_585 <- future_combined_585 |>
+  left_join(bias_by_month |> select(month, bias_correction), by = "month") |>
+  mutate(tmean_future_585_corrected = tmean_future_585_loca + bias_correction)
+```
+
+```{r, warning=FALSE, fig.cap="Monthly mean temperature under three conditions: historical observations, moderate-emissions projection (SSP2-4.5), and high-emissions projection (SSP5-8.5)."}
+library(ggplot2)
+
+future_245_avg <- future_corrected |>
+  group_by(month) |>
+  summarise(tmean = mean(tmean_future_corrected, na.rm = TRUE)) |>
+  mutate(period = "LOCA2 SSP2-4.5 (2045-2074)")
+
+future_585_avg <- future_corrected_585 |>
+  group_by(month) |>
+  summarise(tmean = mean(tmean_future_585_corrected, na.rm = TRUE)) |>
+  mutate(period = "LOCA2 SSP5-8.5 (2045-2074)")
+
+bind_rows(hist_monthly_avg, future_245_avg, future_585_avg) |>
+  ggplot(aes(x = month, y = tmean, color = period)) +
+  geom_line(linewidth = 1) +
+  geom_point() +
+  scale_x_continuous(breaks = 1:12) +
+  labs(title = "Sand Hills Monthly Mean Temperature: Historical vs. Moderate vs. High Emissions",
+       y = "Mean Temperature (\u00b0C)", x = "Month", color = NULL) +
+  theme_minimal()
+```
+
+As expected, the SSP5-8.5 (high-emissions) curve sits above the SSP2-4.5 (moderate-emissions) curve in every month, which sits above the historical curve — a straightforward, physically consistent ordering that also serves as a second sanity check on the whole bias-correction pipeline.
+
+------------------------------------------------------------------------
+
+## Part 10 — Mapping Projected Warming Across the Landscape
+
+The regional-average comparisons above answer "how much warmer, on average" — but warming is not always spatially uniform. This section rebuilds the historical, SSP2-4.5, and SSP5-8.5 temperature series as **pixel-level rasters** (rather than one region-wide average) so the spatial pattern of projected warming across the Sand Hills can be mapped directly.
+
+```{r, warning=FALSE}
+library(terra)
+
+# Build pixel-wise tmean rasters (average of tasmax & tasmin, Kelvin -> Celsius)
+# for each of the three conditions, using the raster stacks retained from
+# Parts 7-9 (not the extracted single-number tables)
+tmean_hist_stack <- (r_hist_sandhills + r_hist_tasmin_sandhills) / 2 - 273.15
+tmean_245_stack  <- (r_sandhills + r_future_tasmin_sandhills) / 2 - 273.15
+tmean_585_stack  <- (r_future_tasmax_585_sandhills + r_future_tasmin_585_sandhills) / 2 - 273.15
+
+# Collapse each many-layer monthly stack down to ONE long-term mean map per pixel
+tmean_hist_map <- mean(tmean_hist_stack, na.rm = TRUE)
+tmean_245_map  <- mean(tmean_245_stack,  na.rm = TRUE)
+tmean_585_map  <- mean(tmean_585_stack,  na.rm = TRUE)
+
+names(tmean_hist_map) <- "Historical (1950-2014)"
+names(tmean_245_map)  <- "SSP2-4.5 (2045-2074)"
+names(tmean_585_map)  <- "SSP5-8.5 (2045-2074)"
+
+# Warming = future map minus historical map, computed pixel by pixel
+warming_245 <- tmean_245_map - tmean_hist_map
+warming_585 <- tmean_585_map - tmean_hist_map
+names(warming_245) <- "Warming: SSP2-4.5 vs Historical"
+names(warming_585) <- "Warming: SSP5-8.5 vs Historical"
+
+warming_stack <- c(warming_245, warming_585)
+
+# Use one shared color scale across both warming maps so they are directly comparable
+mm   <- minmax(warming_stack)
+zmin <- min(mm)
+zmax <- max(mm)
+```
+
+```{r, warning=FALSE, fig.cap="Mean annual temperature across the Sand Hills: historical baseline vs. two future emissions scenarios, on a shared color scale."}
+library(ggplot2)
+library(tidyterra)   # provides geom_spatraster() for plotting terra rasters with ggplot2
+
+ggplot() +
+  geom_spatraster(data = c(tmean_hist_map, tmean_245_map, tmean_585_map)) +
+  facet_wrap(~lyr) +
+  scale_fill_viridis_c(option = "inferno", name = "\u00b0C") +
+  labs(title = "Sand Hills Mean Annual Temperature: Historical vs. Projected") +
+  theme_bw()
+```
+
+```{r, warning=FALSE, fig.cap="Projected warming (future minus historical mean annual temperature), by pixel, under both emissions scenarios."}
+ggplot() +
+  geom_spatraster(data = warming_stack) +
+  facet_wrap(~lyr) +
+  scale_fill_viridis_c(option = "inferno", name = "Warming (\u00b0C)", limits = c(zmin, zmax)) +
+  labs(title = "Projected Warming: SSP2-4.5 vs SSP5-8.5") +
+  theme_bw()
+```
+
+**Reading these maps:** the top figure puts the historical baseline side-by-side with both future scenarios on one shared temperature scale, so the overall rightward shift toward warmer colors from left to right is directly visible. The bottom figure isolates the warming signal itself (future minus historical, pixel by pixel) for each scenario on a shared scale, making it possible to see both the *magnitude* of projected warming and whether it is spatially uniform across the Sand Hills or concentrated in particular areas — useful context for later work relating this warming to vegetation and drought stress across the ecoregion rather than treating the region as a single point.
+
+------------------------------------------------------------------------
+
+## Part 11 — One Picture: 85 Years Observed, 30 Years Projected
+
+The final figure combines everything above into a single timeline: observed temperature anomalies from PRISM (1940–2025), the model's own historical simulation (as a check that the model reproduces the recent past reasonably well), and both future scenarios (2045–2074) — all expressed as an anomaly (difference) from a common 1940–1969 baseline period, in °F to match the convention used in most U.S. climate communication (e.g., NOAA's "Climate at a Glance").
+
+```{r, warning=FALSE}
+library(terra)
+library(dplyr)
+
+# hist_annual_all.csv / future_annual_all.csv are the cached, pre-computed
+# outputs of the multi-model pipeline below (currently populated with one
+# GCM, ACCESS-CM2, but structured to hold several models at once). Re-running
+# the full download-and-extract loop for every model takes on the order of
+# 10 minutes per model, so the cached CSVs are read directly here.
+hist_annual_all   <- read.csv("hist_annual_all.csv")
+future_annual_all <- read.csv("future_annual_all.csv")
+```
+
+::: callout-important
+## Why the ensemble-building code below is commented out
+
+The block below is the **general-purpose version** of everything done manually, model-by-model, in Parts 7–9: it wraps the download → clip → extract → bias-correct pipeline into a single reusable function, `process_one_model()`, and loops it across a list of GCMs (`ACCESS-CM2`, `CanESM5`, `MPI-ESM1-2-LR`, `IPSL-CM6A-LR`, `MRI-ESM2-0`). Running it end-to-end downloads on the order of a dozen multi-hundred-megabyte NetCDF files — around **10 minutes per model**, or roughly an hour for all five — so it is kept commented out here and its cached output (`hist_annual_all.csv`, `future_annual_all.csv`) is loaded directly above.
+:::
+
+```{r, eval=FALSE}
+# process_one_model(): download, clip, extract, and bias-correct ONE GCM's
+# historical + future temperature series against the PRISM baseline.
+# process_one_model <- function(model, version, run = "r1i1p1f1",
+#                               scenarios = c("ssp245", "ssp585"),
+#                               base_dir = "loca2_downloads") {
+#
+#   dir.create(base_dir, showWarnings = FALSE)
+#
+#   dl <- function(var, scenario, period) {
+#     fname <- sprintf("%s.%s.%s.%s.%s.LOCA_16thdeg_%s.monthly.nc",
+#                      var, model, scenario, run, period, version)
+#     url <- sprintf("%s/%s/0p0625deg/%s/%s/%s/%s", "https://cirrus.ucsd.edu/~pierce/LOCA2/NAmer",
+#                    model, run, scenario, var, fname)
+#     dest <- file.path(base_dir, fname)
+#     if (!file.exists(dest)) {
+#       message("Downloading: ", fname)
+#       download.file(url, destfile = dest, mode = "wb", quiet = TRUE)
+#     } else {
+#       message("Already exists, skipping: ", fname)
+#     }
+#     dest
+#   }
+#
+#   extract_series <- function(path) {
+#     r <- rast(path) |> rotate()
+#     r_sh <- crop(r, poly_v) |> mask(poly_v)
+#     extract(r_sh, poly_v, fun = mean, na.rm = TRUE, ID = FALSE)
+#   }
+#
+#   # 1. Historical run (shared across both future scenarios)
+#   hist_tasmax_path <- dl("tasmax", "historical", "1950-2014")
+#   hist_tasmin_path <- dl("tasmin", "historical", "1950-2014")
+#   hist_tasmax_ext <- extract_series(hist_tasmax_path)
+#   hist_tasmin_ext <- extract_series(hist_tasmin_path)
+#
+#   hist_dates <- seq(as.Date("1950-01-01"), as.Date("2014-12-01"), by = "month")
+#   hist_df <- data.frame(
+#     date = hist_dates,
+#     year = as.integer(format(hist_dates, "%Y")),
+#     month = as.integer(format(hist_dates, "%m")),
+#     tmean_hist = ((as.numeric(hist_tasmax_ext[1,]) + as.numeric(hist_tasmin_ext[1,])) / 2) - 273.15
+#   )
+#
+#   # 2. Bias correction, this model's own historical vs PRISM
+#   prism_hist <- sandhills_climate |>
+#     filter(year >= 1950, year <= 2014) |>
+#     group_by(month) |>
+#     summarise(prism_mean = mean(tmean, na.rm = TRUE))
+#
+#   model_hist_monthly <- hist_df |>
+#     group_by(month) |>
+#     summarise(model_mean = mean(tmean_hist, na.rm = TRUE))
+#
+#   bias_by_month <- left_join(prism_hist, model_hist_monthly, by = "month") |>
+#     mutate(bias_correction = prism_mean - model_mean)
+#
+#   # 3. Future scenarios
+#   future_dates <- seq(as.Date("2045-01-01"), as.Date("2074-12-01"), by = "month")
+#   future_results <- list()
+#
+#   for (scen in scenarios) {
+#     tasmax_path <- dl("tasmax", scen, "2045-2074")
+#     tasmin_path <- dl("tasmin", scen, "2045-2074")
+#     tasmax_ext <- extract_series(tasmax_path)
+#     tasmin_ext <- extract_series(tasmin_path)
+#
+#     fut_df <- data.frame(
+#       date = future_dates,
+#       year = as.integer(format(future_dates, "%Y")),
+#       month = as.integer(format(future_dates, "%m")),
+#       tmean_raw = ((as.numeric(tasmax_ext[1,]) + as.numeric(tasmin_ext[1,])) / 2) - 273.15
+#     ) |>
+#       left_join(bias_by_month |> select(month, bias_correction), by = "month") |>
+#       mutate(tmean_corrected = tmean_raw + bias_correction, scenario = scen, model = model)
+#
+#     future_results[[scen]] <- fut_df
+#   }
+#
+#   hist_df$model <- model
+#   hist_df$scenario <- "historical"
+#
+#   list(historical = hist_df, future = bind_rows(future_results))
+# }
+#
+# # Run across a candidate model list, with error handling so one failed
+# # download doesn't stop the whole loop
+# models_to_run <- c("ACCESS-CM2", "CanESM5", "MPI-ESM1-2-LR", "IPSL-CM6A-LR", "MRI-ESM2-0")
+# versions <- c("ACCESS-CM2" = "v20220413", "CanESM5" = "v20220413", "MPI-ESM1-2-LR" = "v20220413",
+#               "IPSL-CM6A-LR" = "v20220413", "MRI-ESM2-0" = "v20220413")
+#
+# all_results <- list()
+# options(timeout = 600)
+# for (m in models_to_run) {
+#   message("=== Processing ", m, " ===")
+#   result <- tryCatch(process_one_model(m, version = versions[[m]]),
+#                       error = function(e) { message("FAILED for ", m, ": ", e$message); NULL })
+#   if (!is.null(result)) all_results[[m]] <- result
+# }
+# names(all_results)   # confirms which models actually succeeded
+#
+# # Combine into the ensemble format needed for the ribbon plot
+# hist_annual_all <- bind_rows(lapply(all_results, `[[`, "historical")) |>
+#   group_by(model, year) |>
+#   summarise(tmean_annual = mean(tmean_hist, na.rm = TRUE), .groups = "drop")
+#
+# future_annual_all <- bind_rows(lapply(all_results, `[[`, "future")) |>
+#   group_by(model, scenario, year) |>
+#   summarise(tmean_annual = mean(tmean_corrected, na.rm = TRUE), .groups = "drop")
+#
+# write.csv(hist_annual_all, "hist_annual_all.csv")
+# write.csv(future_annual_all, "future_annual_all.csv")
+```
+
+```{r, warning=FALSE}
+# Anomaly relative to a fixed early-record baseline (1940-1969), the earliest
+# 30 years available in the PRISM record for the Sand Hills
+baseline_years <- 1940:1969
+baseline_mean <- sandhills_climate |>
+  filter(year %in% baseline_years) |>
+  summarise(baseline = mean(tmean, na.rm = TRUE)) |> pull(baseline)
+
+# With only one model currently in hist_annual_all/future_annual_all, the
+# min-max "ribbon" across models collapses to a single line — but the code
+# is written generically, so it will automatically widen into a true
+# multi-model uncertainty band as more GCMs are added to the ensemble
+hist_ensemble <- hist_annual_all |>
+  mutate(anomaly_F = (tmean_annual - baseline_mean) * 9/5) |>
+  group_by(year) |>
+  summarise(ymin = min(anomaly_F), ymax = max(anomaly_F), .groups = "drop") |>
+  mutate(source = "Modeled Historical")
+
+future_ensemble <- future_annual_all |>
+  mutate(anomaly_F = (tmean_annual - baseline_mean) * 9/5) |>
+  group_by(scenario, year) |>
+  summarise(ymin = min(anomaly_F), ymax = max(anomaly_F), .groups = "drop") |>
+  mutate(source = ifelse(scenario == "ssp245", "Lower Emissions (SSP2-4.5)", "Higher Emissions (SSP5-8.5)"))
+
+observed_annual <- sandhills_climate |>
+  group_by(year) |>
+  summarise(tmean_annual = mean(tmean, na.rm = TRUE)) |>
+  mutate(anomaly_F = (tmean_annual - baseline_mean) * 9/5)
+```
+
+```{r, warning=FALSE, fig.cap="Observed (PRISM, 1940-2025) and projected (ACCESS-CM2, 2045-2074) temperature anomaly for the Nebraska Sand Hills, relative to a 1940-1969 baseline."}
+ggplot() +
+  geom_ribbon(data = hist_ensemble,
+              aes(x = year, ymin = ymin, ymax = ymax, fill = "Modeled Historical"), alpha = 0.8) +
+  geom_ribbon(data = filter(future_ensemble, source == "Lower Emissions (SSP2-4.5)"),
+              aes(x = year, ymin = ymin, ymax = ymax, fill = "Lower Emissions (SSP2-4.5)"), alpha = 0.9) +
+  geom_ribbon(data = filter(future_ensemble, source == "Higher Emissions (SSP5-8.5)"),
+              aes(x = year, ymin = ymin, ymax = ymax, fill = "Higher Emissions (SSP5-8.5)"), alpha = 0.9) +
+  geom_line(data = observed_annual, aes(x = year, y = anomaly_F, color = "Observed"), linewidth = 0.6) +
+  geom_hline(yintercept = 0, color = "blue", linetype = "dashed") +
+  scale_fill_manual(name = NULL, values = c("Modeled Historical" = "grey70",
+                                             "Lower Emissions (SSP2-4.5)" = "#2c7873",
+                                             "Higher Emissions (SSP5-8.5)" = "#a83232")) +
+  scale_color_manual(name = NULL, values = c("Observed" = "#e08214")) +
+  labs(title = "Observed and Projected Temperature Change",
+       subtitle = "Nebraska Sand Hills", x = NULL, y = "Temperature Change (\u00b0F)") +
+  theme_bw(base_size = 15) +
+  theme(legend.position = "inside",
+        legend.position.inside = c(0.02, 0.98),
+        legend.justification = c(0, 1),
+        legend.background = element_rect(fill = alpha("white", 0.7), color = NA))
+```
+
+**How to read this figure:** the dashed blue horizontal line at zero marks the 1940–1969 baseline. The orange line is the actual observed record (PRISM) from 1940 to 2025 — this is real, measured climate history, not a model output. The grey band is the ACCESS-CM2 model's own *simulated* historical period (1950–2014); comparing the grey band to the orange line over their shared years is a useful visual check on how well this particular model reproduces the real historical trajectory. The green and red bands are the two future projections (2045–2074) under moderate and high emissions, respectively, each already bias-corrected against PRISM so they sit on the same temperature scale as the observed record. Both future bands sit clearly above both the historical baseline and the end of the observed record, consistent with continued warming under either emissions pathway, with the high-emissions (red) band projecting more warming than the moderate-emissions (green) band.
+
+------------------------------------------------------------------------
+
+## Results Summary
+
+Bringing the four research questions back together:
+
+1.  **Observed temperature trend (1940–2025):** the Sen's-slope/Mann-Kendall analysis in Part 4 shows season-by-season whether Sand Hills temperatures have shifted detectably over the past \~85 years; exact slopes and p-values are annotated directly on each panel of that figure.
+2.  **Observed precipitation trend (1940–2025):** the parallel analysis in Part 5 shows the same for precipitation; as is typical for Great Plains rainfall, seasonal precipitation trends are generally noisier and less consistently significant than the temperature trends.
+3.  **Drought status across three climate generations (1941–2025):** the SPEI12 period averages computed in Part 6 shift from a range of –0.46 to +0.19 (1941–1970), to –0.29 to +0.30 (1971–2000), to –0.16 to +0.59 (2001–2025) — a gradual, spatially explicit trend toward wetter conditions on balance across the record, with the accompanying difference maps showing exactly where that shift has been strongest.
+4.  **Projected mid-century warming (2045–2074):** after correcting an initial bias-correction error (comparing daily maximum temperature to mean temperature, Part 7) and fixing it by deriving a proper model `tmean` (Part 8), both emissions scenarios project further warming above the historical baseline in every calendar month and across the full Sand Hills domain, with SSP5-8.5 (high emissions) consistently warmer than SSP2-4.5 (moderate emissions), as expected from the underlying physics of the two scenarios.
+
+## Conclusions
+
+The Nebraska Sand Hills have already experienced measurable climate variation over the past 85 years, and the region's own downscaled climate projections — built and bias-corrected from scratch in this post — point to continued warming through mid-century regardless of which emissions pathway plays out, with the magnitude of that warming depending substantially on which pathway occurs. On the water-availability side, the SPEI-based drought record shows no signal of a long-term drying trend at the ecoregion scale over 1941–2025; if anything, the multi-decadal average has trended slightly wetter, even as year-to-year variability and a warming atmosphere continue to raise the *demand* side of the water balance. For a grass-stabilized dune landscape whose long-term stability depends on maintaining continuous vegetation cover, this combination — rising temperatures (and therefore rising evaporative demand) alongside a precipitation record that has not clearly declined — is exactly the kind of climate trajectory that matters most for future work connecting this climate record to plant demography, forage production, and grassland resilience in the Sand Hills.
+
+## Limitations and Next Steps
+
+- **Single global climate model.** The future projections here rely on one GCM (ACCESS-CM2). Different GCMs disagree meaningfully on the magnitude (and sometimes even the sign) of regional precipitation change, even when they agree on the direction of warming. The `process_one_model()` function in Part 11 is written specifically so that additional GCMs can be added later, at which point the current single "line" for modeled historical and future temperature will become genuine multi-model uncertainty ribbons.
+- **Temperature-only future projection.** This post bias-corrects and projects future temperature; a full water-balance projection would also need bias-corrected future precipitation, so that a future SPEI (not just future temperature) could be computed and compared directly to the historical drought record in Part 6.
+- **Spatial averaging in the trend tests.** The Sen's-slope/Mann-Kendall trend tests in Parts 4–5 are computed on a single, ecoregion-wide average time series. The drought mapping in Part 6 shows that conditions are not perfectly spatially uniform, so a natural next step is repeating the trend tests pixel-by-pixel to map *where* the significant temperature and precipitation trends are strongest, rather than relying on one regional summary.
+
+## 
