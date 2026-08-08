@@ -1,3 +1,6 @@
 /.quarto/
 **/*.quarto_ipynb
 .Rproj.user
+data/prism/
+blog/posts/Sandhills/*.rds
+blog/posts/Sandhills/loca2_downloads/
